@@ -11,22 +11,16 @@ import com.rightutils.rightutils.collections.Operation;
 import com.rightutils.rightutils.collections.Predicate;
 import com.rightutils.rightutils.collections.RightList;
 
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
-
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Date;
 
-//TODO remove jackson and rightutils collections
+//TODO remove rightutils collections
 public abstract class RightDBUtils {
 
 	private static final String TAG = RightDBUtils.class.getName();
-	private static final ObjectMapper MAPPER = new ObjectMapper().configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	protected RightDBHandler dbHandler;
 	protected SQLiteDatabase db;
 
@@ -42,6 +36,10 @@ public abstract class RightDBUtils {
 			Log.e(TAG, "Create DB", e);
 		}
 	}
+
+	protected abstract String serializeObject(Object object);
+
+	protected abstract <T> T deserializeObject(String string, Class<T> tClass);
 
 	public <T> void deleteWhere(Class<T> type, String where) {
 		db.delete(getTableName(type), where, null);
@@ -165,7 +163,7 @@ public abstract class RightDBUtils {
 	private <T> void valueDAOMapper(ContentValues values, Field field, T element) {
 		field.setAccessible(true);
 		try {
-			values.put(getColumnName(field), field.get(element) != null ? MAPPER.writeValueAsString(field.get(element)) : null);
+			values.put(getColumnName(field), field.get(element) != null ? serializeObject(field.get(element)) : null);
 		} catch (IllegalAccessException e) {
 			Log.e(TAG, "valueDaoMapper", e);
 		} catch (Exception e) {
@@ -256,11 +254,7 @@ public abstract class RightDBUtils {
 				}
 			} else if (field.isAnnotationPresent(ColumnDAO.class)) {
 				String value = cursor.getString(cursor.getColumnIndex(columnName));
-				field.set(result, value != null ? MAPPER.readValue(value,new TypeReference<Object>() {
-					@Override public Type getType() {
-						return field.getGenericType();
-					}
-				}) : null);
+				field.set(result, value != null ? deserializeObject(value, field.getType()) : null);
 			} else {
 				Log.w(TAG, String.format("In class '%s' type '%s' of field '%s' not supported.", result.getClass().getSimpleName(), field.getType().toString(), field.getName()));
 			}
