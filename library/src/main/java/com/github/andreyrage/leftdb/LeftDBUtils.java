@@ -37,6 +37,16 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
         }
     }
 
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+    }
+
+    @Override
+    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+    }
+
     protected abstract String serializeObject(Object object);
 
     protected abstract <T> T deserializeObject(String string, Class<T> tClass);
@@ -112,17 +122,23 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
             if (value.isAnnotationPresent(ColumnChild.class)) {
                 value.setAccessible(true);
                 try {
+                    Field parentKeyField = element.getClass().getDeclaredField(getParentKey(value));
+                    parentKeyField.setAccessible(true);
+                    Long parentKeyValue = (Long) parentKeyField.get(element);
+                    String foreignKey = getForeignKey(value);
                     if (value.getType().isAssignableFrom(List.class)) {
-                        //TODO for each element of list must be set foreignKey
-                        add((List) value.get(element));
+                        List list = (List) value.get(element);
+                        for (Object o : list) {
+                            Field foreignKeyField = o.getClass().getDeclaredField(foreignKey);
+                            foreignKeyField.setAccessible(true);
+                            foreignKeyField.set(o, parentKeyValue);
+                        }
+                        add(list);
                     } else {
-                        //TODO MUST BE TEST
-                        Long parentIdValue = (Long) element.getClass().getDeclaredField(getParentKey(value)).get(element);
                         Object childObject = value.get(element);
-                        Field foreignKeyField = childObject.getClass().getDeclaredField(getForeignKey(value));
+                        Field foreignKeyField = childObject.getClass().getDeclaredField(foreignKey);
                         foreignKeyField.setAccessible(true);
-                        foreignKeyField.set(childObject, parentIdValue);
-                        //--------
+                        foreignKeyField.set(childObject, parentKeyValue);
                         add(childObject);
                     }
                 } catch (Exception e) {
@@ -169,7 +185,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 			} else if (fieldType.isAssignableFrom(short.class) || fieldType.isAssignableFrom(Short.class)) {
 				values.put(getColumnName(field), (Short) field.get(element));
 			} else if (fieldType.isAssignableFrom(boolean.class) || fieldType.isAssignableFrom(Boolean.class)) {
-                values.put(getColumnName(field), ((Boolean) field.get(element)) ? 1 : 0);
+                values.put(getColumnName(field), field.get(element) == null ? null : ((Boolean) field.get(element)) ? 1 : 0);
             } else if (fieldType.isAssignableFrom(float.class) || fieldType.isAssignableFrom(Float.class)) {
                 values.put(getColumnName(field), (Float) field.get(element));
             } else if (fieldType.isAssignableFrom(double.class) || fieldType.isAssignableFrom(Double.class)) {
@@ -243,6 +259,17 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
         field.setAccessible(true);
 		Class<?> fieldType = field.getType();
         try {
+            if (field.isAnnotationPresent(ColumnChild.class)) {
+                String foreignKey = getForeignKey(field);
+                long parentKeyValue = cursor.getLong(cursor.getColumnIndex(getParentKey(field)));
+                if (fieldType.isAssignableFrom(List.class)) {
+                    field.set(result, getAllWhere(String.format("%s = %d", foreignKey, parentKeyValue), (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]));
+                } else {
+                    List resultList = getAllWhere(String.format("%s = %d", foreignKey, parentKeyValue), fieldType);
+                    field.set(result, resultList.isEmpty() ? null : resultList.get(0));
+                }
+                return;
+            }
             if (cursor.isNull(cursor.getColumnIndex(columnName))) {
                 return;
             }
@@ -270,16 +297,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 				Calendar c = Calendar.getInstance();
 				c.setTimeInMillis(l);
 				field.set(result, c);
-			} else if (field.isAnnotationPresent(ColumnChild.class)) {
-                String foreignKey = getForeignKey(field);
-                long parentKeyValue = cursor.getLong(cursor.getColumnIndex(getParentKey(field)));
-                if (fieldType.isAssignableFrom(List.class)) {
-                    field.set(result, getAllWhere(String.format("%s = %d", foreignKey, parentKeyValue), (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]));
-                } else {
-                    List resultList = getAllWhere(String.format("%s = %d", foreignKey, parentKeyValue), fieldType);
-                    field.set(result, resultList.isEmpty() ? null : resultList.get(0));
-                }
-            } else if (field.isAnnotationPresent(ColumnDAO.class)) {
+			} else if (field.isAnnotationPresent(ColumnDAO.class)) {
                 String value = cursor.getString(cursor.getColumnIndex(columnName));
                 field.set(result, value != null ? deserializeObject(value, fieldType) : null);
             } else if (Serializable.class.isAssignableFrom(fieldType.getClass())) {
