@@ -18,14 +18,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public abstract class LeftDBUtils {
+public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallback {
 
     private static final String TAG = LeftDBUtils.class.getName();
     protected LeftDBHandler dbHandler;
     protected SQLiteDatabase db;
 
     protected void setDBContext(Context context, String name, int version) {
-        dbHandler = new LeftDBHandler(context, name, version);
+        dbHandler = new LeftDBHandler(context, name, version, this);
         try {
             dbHandler.createDataBase();
             if (db != null && db.isOpen()) {
