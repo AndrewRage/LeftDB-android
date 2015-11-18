@@ -12,15 +12,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class RightDBHandler extends SQLiteOpenHelper {
+public class LeftDBHandler extends SQLiteOpenHelper {
 
-	private static final String TAG = RightDBHandler.class.getName();
+	private static final String TAG = LeftDBHandler.class.getName();
 	private SQLiteDatabase dataBase;
 	private Context context;
 	private String name;
 	private String path;
 
-	public RightDBHandler(Context context, String name, int version) {
+	public LeftDBHandler(Context context, String name, int version) {
 		super(context, name, null, version);
 		this.context = context;
 		this.name = name;
