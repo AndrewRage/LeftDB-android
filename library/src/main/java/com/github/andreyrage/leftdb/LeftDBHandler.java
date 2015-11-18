@@ -47,7 +47,7 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		}
 	}
 
-	private boolean checkDataBase() {
+	protected boolean checkDataBase() {
 		File dbFile = new File(path + name);
 		return dbFile.exists();
 	}

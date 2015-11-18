@@ -14,6 +14,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -27,13 +28,21 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
     protected void setDBContext(Context context, String name, int version) {
         dbHandler = new LeftDBHandler(context, name, version, this);
         try {
-            dbHandler.createDataBase();
-            if (db != null && db.isOpen()) {
-            } else {
+            createDataBase(context, name);
+            if (db == null || !db.isOpen()) {
                 db = dbHandler.getWritableDatabase();
             }
         } catch (IOException e) {
             Log.e(TAG, "Create DB", e);
+        }
+    }
+
+    private void createDataBase(Context context, String name) throws IOException {
+        if (!dbHandler.checkDataBase()) {
+            if (Arrays.asList(context.getAssets().list("")).contains(name)) {
+                Log.i(TAG, "copy DataBase");
+                dbHandler.copyDataBase();
+            }
         }
     }
 
