@@ -8,21 +8,24 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public abstract class RightDBUtils {
+public abstract class LeftDBUtils {
 
-    private static final String TAG = RightDBUtils.class.getName();
-    protected RightDBHandler dbHandler;
+    private static final String TAG = LeftDBUtils.class.getName();
+    protected LeftDBHandler dbHandler;
     protected SQLiteDatabase db;
 
     protected void setDBContext(Context context, String name, int version) {
-        dbHandler = new RightDBHandler(context, name, version);
+        dbHandler = new LeftDBHandler(context, name, version);
         try {
             dbHandler.createDataBase();
             if (db != null && db.isOpen()) {
@@ -147,8 +150,6 @@ public abstract class RightDBUtils {
         field.setAccessible(true);
         try {
             values.put(getColumnName(field), field.get(element) != null ? serializeObject(field.get(element)) : null);
-        } catch (IllegalAccessException e) {
-            Log.e(TAG, "valueDaoMapper", e);
         } catch (Exception e) {
             Log.e(TAG, "valueDaoMapper", e);
         }
@@ -157,22 +158,51 @@ public abstract class RightDBUtils {
 
     private <T> void valueMapper(ContentValues values, Field field, T element) {
         field.setAccessible(true);
+		Class<?> fieldType = field.getType();
         try {
-            if (field.getType().isAssignableFrom(String.class)) {
+            if (fieldType.isAssignableFrom(String.class)) {
                 values.put(getColumnName(field), (String) field.get(element));
-            } else if (field.getType().isAssignableFrom(long.class)) {
+            } else if (fieldType.isAssignableFrom(long.class) || fieldType.isAssignableFrom(Long.class)) {
                 values.put(getColumnName(field), (Long) field.get(element));
-            } else if (field.getType().isAssignableFrom(int.class)) {
-                values.put(getColumnName(field), (Integer) field.get(element));
-            } else if (field.getType().isAssignableFrom(boolean.class)) {
+            } else if (fieldType.isAssignableFrom(int.class) || fieldType.isAssignableFrom(Integer.class)) {
+				values.put(getColumnName(field), (Integer) field.get(element));
+			} else if (fieldType.isAssignableFrom(short.class) || fieldType.isAssignableFrom(Short.class)) {
+				values.put(getColumnName(field), (Short) field.get(element));
+			} else if (fieldType.isAssignableFrom(boolean.class) || fieldType.isAssignableFrom(Boolean.class)) {
                 values.put(getColumnName(field), ((Boolean) field.get(element)) ? 1 : 0);
-            } else if (field.getType().isAssignableFrom(float.class)) {
+            } else if (fieldType.isAssignableFrom(float.class) || fieldType.isAssignableFrom(Float.class)) {
                 values.put(getColumnName(field), (Float) field.get(element));
-            } else if (field.getType().isAssignableFrom(double.class)) {
+            } else if (fieldType.isAssignableFrom(double.class) || fieldType.isAssignableFrom(Double.class)) {
                 values.put(getColumnName(field), (Double) field.get(element));
-            } else if (field.getType().isAssignableFrom(Date.class)) {
+            } else if (fieldType.isAssignableFrom(BigDecimal.class)) {
+				try {
+					values.put(getColumnName(field), field.get(element).toString());
+				} catch (NullPointerException e) {
+					values.putNull(getColumnName(field));
+				}
+			} else if (fieldType.isAssignableFrom(Date.class)) {
                 values.put(getColumnName(field), field.get(element) == null ? null : ((Date) field.get(element)).getTime());
-            } else {
+            } else if (fieldType.isAssignableFrom(Calendar.class)) {
+				try {
+					values.put(getColumnName(field), ((Calendar) field.get(element)).getTimeInMillis());
+				} catch (NullPointerException e) {
+					values.put(getColumnName(field), (Long) null);
+				}
+			} else if (Serializable.class.isAssignableFrom(fieldType.getClass())) {
+				byte[] bytes = null;
+                if (field.get(element) != null) {
+                    try {
+                        bytes = Serializer.serialize(field.get(element));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+				if (bytes == null) {
+					values.put(getColumnName(field), "".getBytes());
+				} else {
+					values.put(getColumnName(field), bytes);
+				}
+			} else {
                 Log.w(TAG, String.format("In class '%s' type '%s' of field '%s' not supported.", element.getClass().getSimpleName(), field.getType().toString(), field.getName()));
             }
         } catch (IllegalAccessException e) {
@@ -211,35 +241,56 @@ public abstract class RightDBUtils {
 
     private <T> void fieldMapper(T result, Cursor cursor, final Field field, String columnName) {
         field.setAccessible(true);
+		Class<?> fieldType = field.getType();
         try {
-            if (field.getType().isAssignableFrom(String.class)) {
-                field.set(result, cursor.getString(cursor.getColumnIndex(columnName)));
-            } else if (field.getType().isAssignableFrom(long.class)) {
+            if (cursor.isNull(cursor.getColumnIndex(columnName))) {
+                return;
+            }
+            if (fieldType.isAssignableFrom(String.class)) {
+				field.set(result, cursor.getString(cursor.getColumnIndex(columnName)));
+            } else if (fieldType.isAssignableFrom(long.class) || fieldType.isAssignableFrom(Long.class)) {
                 field.set(result, cursor.getLong(cursor.getColumnIndex(columnName)));
-            } else if (field.getType().isAssignableFrom(int.class)) {
-                field.set(result, cursor.getInt(cursor.getColumnIndex(columnName)));
-            } else if (field.getType().isAssignableFrom(boolean.class)) {
+            } else if (fieldType.isAssignableFrom(int.class) || fieldType.isAssignableFrom(Integer.class)) {
+				field.set(result, cursor.getInt(cursor.getColumnIndex(columnName)));
+            } else if (fieldType.isAssignableFrom(short.class) || fieldType.isAssignableFrom(Short.class)) {
+				field.set(result, cursor.getShort(cursor.getColumnIndex(columnName)));
+			} else if (fieldType.isAssignableFrom(boolean.class) || fieldType.isAssignableFrom(Boolean.class)) {
                 field.set(result, cursor.getLong(cursor.getColumnIndex(columnName)) == 1);
-            } else if (field.getType().isAssignableFrom(float.class)) {
+			} else if (fieldType.isAssignableFrom(float.class) || fieldType.isAssignableFrom(Float.class)) {
                 field.set(result, cursor.getFloat(cursor.getColumnIndex(columnName)));
-            } else if (field.getType().isAssignableFrom(double.class)) {
+			} else if (fieldType.isAssignableFrom(double.class) || fieldType.isAssignableFrom(Double.class)) {
                 field.set(result, cursor.getDouble(cursor.getColumnIndex(columnName)));
-            } else if (field.getType().isAssignableFrom(Date.class)) {
+            } else if (fieldType.isAssignableFrom(BigDecimal.class)) {
+				String val = cursor.getString(cursor.getColumnIndex(columnName));
+				field.set(result, val == null || val.equals("null") ? null : new BigDecimal(val));
+			} else if (fieldType.isAssignableFrom(Date.class)) {
                 field.set(result, cursor.getLong(cursor.getColumnIndex(columnName)) == 0 ? null : new Date(cursor.getLong(cursor.getColumnIndex(columnName))));
-            } else if (field.isAnnotationPresent(ColumnChild.class)) {
+            } else if (fieldType.isAssignableFrom(Calendar.class)) {
+				long l = cursor.getLong(cursor.getColumnIndex(columnName));
+				Calendar c = Calendar.getInstance();
+				c.setTimeInMillis(l);
+				field.set(result, c);
+			} else if (field.isAnnotationPresent(ColumnChild.class)) {
                 String foreignKey = getForeignKey(field);
                 long parentKeyValue = cursor.getLong(cursor.getColumnIndex(getParentKey(field)));
-                if (field.getType().isAssignableFrom(List.class)) {
+                if (fieldType.isAssignableFrom(List.class)) {
                     field.set(result, getAllWhere(String.format("%s = %d", foreignKey, parentKeyValue), (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]));
                 } else {
-                    List resultList = getAllWhere(String.format("%s = %d", foreignKey, parentKeyValue), field.getType());
+                    List resultList = getAllWhere(String.format("%s = %d", foreignKey, parentKeyValue), fieldType);
                     field.set(result, resultList.isEmpty() ? null : resultList.get(0));
                 }
             } else if (field.isAnnotationPresent(ColumnDAO.class)) {
                 String value = cursor.getString(cursor.getColumnIndex(columnName));
-                field.set(result, value != null ? deserializeObject(value, field.getType()) : null);
-            } else {
-                Log.w(TAG, String.format("In class '%s' type '%s' of field '%s' not supported.", result.getClass().getSimpleName(), field.getType().toString(), field.getName()));
+                field.set(result, value != null ? deserializeObject(value, fieldType) : null);
+            } else if (Serializable.class.isAssignableFrom(fieldType.getClass())) {
+				byte[] bytes = cursor.getBlob(cursor.getColumnIndex(columnName));
+				if (bytes == null) {
+					field.set(result, null);
+				} else {
+					field.set(result, Serializer.deserialize(bytes));
+				}
+			} else {
+                Log.w(TAG, String.format("In class '%s' type '%s' of field '%s' not supported.", result.getClass().getSimpleName(), fieldType.toString(), field.getName()));
             }
         } catch (IllegalAccessException e) {
             Log.e(TAG, "fieldMapper", e);
@@ -280,7 +331,7 @@ public abstract class RightDBUtils {
         return columnName;
     }
 
-    public RightDBHandler getDbHandler() {
+    public LeftDBHandler getDbHandler() {
         return dbHandler;
     }
 }
