@@ -91,14 +91,26 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
         return queryListMapper(query, type);
     }
 
-    public <T> void add(List<T> elements) {
+    public <T> void add(List<T> elements, boolean useTransaction) {
+        if (useTransaction) {
+            db.beginTransaction();
+        }
         for (T value : elements) {
             add(value);
         }
+        if (useTransaction) {
+            db.setTransactionSuccessful();
+            db.endTransaction();
+        }
+    }
+
+    public <T> void add(List<T> elements) {
+        add(elements, true);
     }
 
     public <T> long add(final T element) {
         final ContentValues values = new ContentValues();
+        boolean isColumnChild = false;
         for (Field value : element.getClass().getDeclaredFields()) {
             if (!value.isAnnotationPresent(ColumnIgnore.class)
                     && !Modifier.isStatic(value.getModifiers())) {
@@ -106,14 +118,18 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
                     valueAutoIncMapper(values, value, element);
                 } else if (value.isAnnotationPresent(ColumnDAO.class)) {
                     valueDAOMapper(values, value, element);
-                } else if (!value.isAnnotationPresent(ColumnChild.class)) {
+                } else if (value.isAnnotationPresent(ColumnChild.class)) {
+                    isColumnChild = true;
+                } else {
                     valueMapper(values, value, element);
                 }
             }
         }
         long count = db.insert(getTableName(element.getClass()), null, values);
         values.clear();
-        addColumnChild(element);
+        if (isColumnChild) {
+            addColumnChild(element);
+        }
         return count;
     }
 
@@ -133,7 +149,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
                             foreignKeyField.setAccessible(true);
                             foreignKeyField.set(o, parentKeyValue);
                         }
-                        add(list);
+                        add(list, false);
                     } else {
                         Object childObject = value.get(element);
                         Field foreignKeyField = childObject.getClass().getDeclaredField(foreignKey);
