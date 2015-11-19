@@ -18,7 +18,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallback {
+public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     private static final String TAG = LeftDBUtils.class.getName();
     protected LeftDBHandler dbHandler;
@@ -26,15 +26,14 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 
     protected void setDBContext(Context context, String name, int version) {
         dbHandler = new LeftDBHandler(context, name, version, this);
-        try {
-            dbHandler.createDataBase();
-            if (db != null && db.isOpen()) {
-            } else {
-                db = dbHandler.getWritableDatabase();
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "Create DB", e);
+        if (db == null || !db.isOpen()) {
+            db = dbHandler.getWritableDatabase();
         }
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+
     }
 
     @Override
@@ -72,6 +71,15 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
         return 0;
     }
 
+    public <T> int count(Class<T> type, String where) {
+        return countResultsByQuery(String.format("SELECT * FROM %s", getTableName((Class) type))
+                + (TextUtils.isEmpty(where) ? "" : " WHERE " + where));
+    }
+
+    public <T> int count(Class<T> type) {
+        return count(type, null);
+    }
+
     public <T> List<T> executeQuery(String query, Class<T> type) {
         return queryListMapper(query, type);
     }
@@ -91,14 +99,26 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
         return queryListMapper(query, type);
     }
 
-    public <T> void add(List<T> elements) {
+    public <T> void add(List<T> elements, boolean useTransaction) {
+        if (useTransaction) {
+            db.beginTransaction();
+        }
         for (T value : elements) {
             add(value);
         }
+        if (useTransaction) {
+            db.setTransactionSuccessful();
+            db.endTransaction();
+        }
+    }
+
+    public <T> void add(List<T> elements) {
+        add(elements, true);
     }
 
     public <T> long add(final T element) {
         final ContentValues values = new ContentValues();
+        boolean isColumnChild = false;
         for (Field value : element.getClass().getDeclaredFields()) {
             if (!value.isAnnotationPresent(ColumnIgnore.class)
                     && !Modifier.isStatic(value.getModifiers())) {
@@ -106,14 +126,18 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
                     valueAutoIncMapper(values, value, element);
                 } else if (value.isAnnotationPresent(ColumnDAO.class)) {
                     valueDAOMapper(values, value, element);
-                } else if (!value.isAnnotationPresent(ColumnChild.class)) {
+                } else if (value.isAnnotationPresent(ColumnChild.class)) {
+                    isColumnChild = true;
+                } else {
                     valueMapper(values, value, element);
                 }
             }
         }
         long count = db.insert(getTableName(element.getClass()), null, values);
         values.clear();
-        addColumnChild(element);
+        if (isColumnChild) {
+            addColumnChild(element);
+        }
         return count;
     }
 
@@ -133,7 +157,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
                             foreignKeyField.setAccessible(true);
                             foreignKeyField.set(o, parentKeyValue);
                         }
-                        add(list);
+                        add(list, false);
                     } else {
                         Object childObject = value.get(element);
                         Field foreignKeyField = childObject.getClass().getDeclaredField(foreignKey);
@@ -351,5 +375,116 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 
     public LeftDBHandler getDbHandler() {
         return dbHandler;
+    }
+
+    //SQL UTILS
+    public <T> void createTables(SQLiteDatabase db, List<T> elements) {
+        for (T element : elements) {
+            createTable(db, element);
+        }
+    }
+
+    public <T> void createTable(SQLiteDatabase db, T element){
+        db.execSQL(createTableSQL(element));
+    }
+
+    public <T> String createTableSQL(T element) throws IllegalArgumentException {
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("CREATE TABLE ");
+        sqlBuilder.append(getTableName((Class) element));
+        sqlBuilder.append(" (");
+        int columnCount = 0;
+        for (Field field : ((Class) element).getDeclaredFields()) {
+            if (!field.isAnnotationPresent(ColumnIgnore.class)
+                    && !field.isAnnotationPresent(ColumnChild.class)) {
+                StringBuilder builder = new StringBuilder();
+                if (columnCount > 0) {
+                    builder.append(", ");
+                }
+
+                Class<?> fieldType = field.getType();
+                if (fieldType.isAssignableFrom(String.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" TEXT");
+                } else if (fieldType.isAssignableFrom(long.class) || fieldType.isAssignableFrom(Long.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
+                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
+                    }
+                } else if (fieldType.isAssignableFrom(int.class) || fieldType.isAssignableFrom(Integer.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
+                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
+                    }
+                } else if (fieldType.isAssignableFrom(short.class) || fieldType.isAssignableFrom(Short.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
+                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
+                    }
+                } else if (fieldType.isAssignableFrom(boolean.class) || fieldType.isAssignableFrom(Boolean.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                } else if (fieldType.isAssignableFrom(float.class) || fieldType.isAssignableFrom(Float.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" REAL");
+                } else if (fieldType.isAssignableFrom(double.class) || fieldType.isAssignableFrom(Double.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" REAL");
+                } else if (fieldType.isAssignableFrom(BigDecimal.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" TEXT");
+                } else if (fieldType.isAssignableFrom(Date.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                } else if (fieldType.isAssignableFrom(Calendar.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                } else if (field.isAnnotationPresent(ColumnDAO.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" TEXT");
+                } else if (Serializable.class.isAssignableFrom(fieldType.getClass())) {
+                    builder.append(getColumnName(field));
+                    builder.append(" BLOB");
+                }
+
+                if (builder.length() > 2) {
+                    sqlBuilder.append(builder);
+                    columnCount++;
+                }
+            }
+        }
+        if (columnCount == 0) {
+            throw new IllegalArgumentException("Cannot create a table without at least one column.");
+        }
+        sqlBuilder.append(" );");
+        return sqlBuilder.toString();
+    }
+
+    public <T> void deleteTables(SQLiteDatabase db, List<T> elements) {
+        for (T element : elements) {
+            deleteTable(db, element);
+        }
+    }
+
+    public <T> void deleteTable(SQLiteDatabase db, T element) {
+        db.execSQL(deleteTableSQL(element));
+    }
+
+    public <T> String deleteTableSQL(T element) {
+        return String.format("DROP TABLE IF EXISTS %s;", getTableName((Class) element));
+    }
+
+    public <T> boolean isTableExists(T element) {
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name = ?", new String[] {"table", getTableName((Class) element)});
+        if (!cursor.moveToFirst())
+        {
+            return false;
+        }
+        int count = cursor.getInt(0);
+        cursor.close();
+        return count > 0;
     }
 }
