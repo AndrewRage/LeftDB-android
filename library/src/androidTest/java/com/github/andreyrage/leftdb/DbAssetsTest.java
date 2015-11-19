@@ -64,6 +64,7 @@ public class DbAssetsTest extends AndroidTestCase {
 		dbUtils.add(allFields);
 		List<AllFields> dbList = dbUtils.getAll(AllFields.class);
 
+		assertEquals(1, dbUtils.count(AllFields.class));
 		assertEquals(1, dbList.size());
 		assertEquals(allFields, dbList.get(0));
 	}
@@ -95,6 +96,7 @@ public class DbAssetsTest extends AndroidTestCase {
 		dbUtils.add(allFields);
 		List<AllFields> dbList = dbUtils.getAll(AllFields.class);
 
+		assertEquals(1, dbUtils.count(AllFields.class));
 		assertEquals(1, dbList.size());
 		assertEquals(allFields, dbList.get(0));
 	}
@@ -106,7 +108,9 @@ public class DbAssetsTest extends AndroidTestCase {
 		dbUtils.add(object);
 		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
 
+		assertEquals(2, dbUtils.count(SerializableObject.class));
 		assertEquals(2, dbList.size());
+		assertEquals(1, dbUtils.count(SerializableObject.class, "id = 1"));
 		assertEquals(1, dbList.get(0).getId());
 		assertEquals(2, dbList.get(1).getId());
 	}
@@ -171,9 +175,12 @@ public class DbAssetsTest extends AndroidTestCase {
 		list.add(object2);
 
 		dbUtils.add(list);
+		assertEquals(2, dbUtils.count(SerializableObject.class));
+
 		dbUtils.deleteAll(SerializableObject.class);
 		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
 
+		assertEquals(0, dbUtils.count(SerializableObject.class));
 		assertTrue(dbList.isEmpty());
 	}
 
