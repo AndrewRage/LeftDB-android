@@ -15,9 +15,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public class DbTest extends AndroidTestCase {
+public class DbAssetsTest extends AndroidTestCase {
 
-	private DBUtils dbUtils;
+	public DBUtils dbUtils;
 
 	@Override
 	protected void setUp() throws Exception {

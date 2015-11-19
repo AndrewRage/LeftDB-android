@@ -1,6 +1,14 @@
 package com.github.andreyrage.leftdb;
 
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+
+import com.github.andreyrage.leftdb.entities.AllFields;
+import com.github.andreyrage.leftdb.entities.ChildMany;
+import com.github.andreyrage.leftdb.entities.ChildOne;
+import com.github.andreyrage.leftdb.entities.ParentMany;
+import com.github.andreyrage.leftdb.entities.ParentOne;
+import com.github.andreyrage.leftdb.entities.SerializableObject;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -11,6 +19,13 @@ public class DBUtils extends LeftDBUtils {
 		DBUtils dbUtils = new DBUtils();
 		dbUtils.setDBContext(context, name, version);
 		return dbUtils;
+	}
+
+	@Override public void onCreate(SQLiteDatabase db) {
+		super.onCreate(db);
+		db.execSQL(createTableSQL(AllFields.class));
+		createTable(db, SerializableObject.class);
+		createTables(db, Arrays.asList(ChildMany.class, ChildOne.class, ParentMany.class, ParentOne.class));
 	}
 
 	@Override
