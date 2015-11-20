@@ -246,4 +246,19 @@ public class DbTest extends AndroidTestCase {
 		Log.d(TAG, emptyUpdateQuery.toString());
 	}
 
+	public void testAsyncCall() throws Exception {
+		AsyncCall.make(new AsyncCall.Call<List<AllFields>>() {
+			@Override public List<AllFields> call() {
+				return dbUtils.executeQuery(SelectQuery.builder()
+						.table(AllFields.class.getSimpleName())
+						.where("id > ?")
+						.whereArgs(0).build(), AllFields.class);
+			}
+		}, new AsyncCall.Do<List<AllFields>>() {
+			@Override public void doNext(List<AllFields> allFields) {
+				assertNotNull(allFields);
+			}
+		}).call();
+	}
+
 }

@@ -407,4 +407,5 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 	public LeftDBHandler getDbHandler() {
 		return dbHandler;
 	}
+
 }

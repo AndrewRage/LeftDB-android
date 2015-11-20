@@ -126,6 +126,8 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 
 	public interface OnVersionChangeCallback {
 		void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion);
+
 		void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion);
 	}
+
 }
