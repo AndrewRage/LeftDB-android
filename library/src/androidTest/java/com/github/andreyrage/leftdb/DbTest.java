@@ -1,6 +1,7 @@
 package com.github.andreyrage.leftdb;
 
 import android.test.AndroidTestCase;
+import android.util.Log;
 
 import com.github.andreyrage.leftdb.entities.AllFields;
 import com.github.andreyrage.leftdb.entities.ChildMany;
@@ -234,4 +235,15 @@ public class DbTest extends AndroidTestCase {
 		assertEquals("child4", dbList.get(1).getChilds().get(1).getName());
 		assertEquals("child5", dbList.get(1).getChilds().get(2).getName());
 	}
+
+	public void testCorrectQueries() throws Exception {
+		String TAG = "DbTest";
+		SelectQuery emptySelectQuery = SelectQuery.builder().build();
+		Log.d(TAG, emptySelectQuery.toString());
+		DeleteQuery emptyDeleteQuery = DeleteQuery.builder().build();
+		Log.d(TAG, emptyDeleteQuery.toString());
+		UpdateQuery emptyUpdateQuery = UpdateQuery.builder().build();
+		Log.d(TAG, emptyUpdateQuery.toString());
+	}
+
 }
