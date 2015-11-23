@@ -19,11 +19,19 @@ public class AsyncCall<Result> extends AsyncTask<Void, Void, Result> {
 		return new AsyncCall<>(call, doNext);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override protected Result doInBackground(Void... params) {
-		return mCall.call();
+		try {
+			return mCall.call();
+		} catch (Exception e) {
+			return (Result) new MonitorClass();
+		}
 	}
 
 	@Override protected void onPostExecute(Result result) {
+		if (result instanceof MonitorClass) {
+			throw new IllegalStateException("An error occurred while doing in background");
+		}
 		mDoNext.doNext(result);
 	}
 
@@ -37,6 +45,9 @@ public class AsyncCall<Result> extends AsyncTask<Void, Void, Result> {
 
 	public void call() {
 		execute();
+	}
+
+	private static class MonitorClass {
 	}
 
 }

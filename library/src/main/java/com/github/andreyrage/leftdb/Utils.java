@@ -18,14 +18,6 @@ public class Utils {
 		}
 	}
 
-	public static void checkNotNullOrEmpty(@Nullable String string, @NonNull String message) {
-		if (string == null) {
-			throw new NullPointerException(message);
-		} else if (string.isEmpty()) {
-			throw new IllegalStateException(message);
-		}
-	}
-
 	@SafeVarargs
 	@NonNull public static <T, A> List<T> unmodifiableListOf(Class<T> clazz, Func<List<T>, A, Void> func, @Nullable A... args) {
 		if (args == null || args.length == 0) {

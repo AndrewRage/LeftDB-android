@@ -5,22 +5,30 @@ import android.support.annotation.Nullable;
 
 import java.util.List;
 
+import static com.github.andreyrage.leftdb.Utils.checkNotNull;
+import static com.github.andreyrage.leftdb.Utils.nonNullString;
+import static com.github.andreyrage.leftdb.Utils.unmodifiableListOf;
+
 public final class UpdateQuery {
 
-	@NonNull private final String table;
+	@NonNull private final Class<?> entity;
 
 	@NonNull private final String where;
 
 	@NonNull private final List<String> whereArgs;
 
-	private UpdateQuery(@NonNull String table, @NonNull String where, @NonNull List<String> whereArgs) {
-		this.table = table;
+	private UpdateQuery(@NonNull Class<?> entity, @NonNull String where, @NonNull List<String> whereArgs) {
+		this.entity = entity;
 		this.where = where;
 		this.whereArgs = whereArgs;
 	}
 
 	@NonNull public String table() {
-		return table;
+		return entity.getSimpleName();
+	}
+
+	@NonNull Class<?> entity() {
+		return entity;
 	}
 
 	@NonNull public String where() {
@@ -38,14 +46,14 @@ public final class UpdateQuery {
 
 		UpdateQuery that = (UpdateQuery) o;
 
-		return table.equals(that.table)
+		return entity.equals(that.entity)
 				&& where.equals(that.where)
 				&& whereArgs.equals(that.whereArgs);
 	}
 
 	@Override
 	public int hashCode() {
-		int result = table.hashCode();
+		int result = entity.hashCode();
 		result = 31 * result + where.hashCode();
 		result = 31 * result + whereArgs.hashCode();
 		return result;
@@ -53,7 +61,7 @@ public final class UpdateQuery {
 
 	@Override public String toString() {
 		return "UpdateQuery{" +
-				"table='" + table + '\'' +
+				"entity='" + entity.getSimpleName() + '\'' +
 				", where='" + where + '\'' +
 				", whereArgs=" + whereArgs +
 				'}';
@@ -65,7 +73,7 @@ public final class UpdateQuery {
 
 	public static final class Builder {
 
-		private String table;
+		private Class<?> entity;
 
 		private String where;
 
@@ -74,19 +82,19 @@ public final class UpdateQuery {
 		Builder() {
 		}
 
-		@NonNull public Builder table(@NonNull String table) {
-			Utils.checkNotNullOrEmpty(table, "Table name is null or empty");
-			this.table = table;
+		@NonNull public Builder table(@NonNull Class<?> entity) {
+			checkNotNull(entity, "Table name is null or empty");
+			this.entity = entity;
 			return this;
 		}
 
 		@NonNull public Builder where(@Nullable String where) {
-			this.where = Utils.nonNullString(where);
+			this.where = nonNullString(where);
 			return this;
 		}
 
 		@NonNull public Builder whereArgs(@Nullable Object... whereArgs) {
-			this.whereArgs = Utils.unmodifiableListOf(String.class, new Func<List<String>, Object, Void>() {
+			this.whereArgs = unmodifiableListOf(String.class, new Func<List<String>, Object, Void>() {
 				@Override public Void invoke(List<String> strings, Object o) {
 					strings.add(o != null ? o.toString() : "null");
 					return null;
@@ -101,7 +109,7 @@ public final class UpdateQuery {
 			}
 
 			return new UpdateQuery(
-					table,
+					entity,
 					where,
 					whereArgs
 			);

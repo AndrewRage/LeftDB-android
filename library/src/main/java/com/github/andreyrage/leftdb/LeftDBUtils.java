@@ -15,6 +15,7 @@ import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -31,8 +32,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 		dbHandler = new LeftDBHandler(context, name, version, this);
 		try {
 			dbHandler.createDataBase();
-			if (db != null && db.isOpen()) {
-			} else {
+			if (db == null || !db.isOpen()) {
 				db = dbHandler.getWritableDatabase();
 			}
 		} catch (IOException e) {
@@ -56,6 +56,10 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 
 	public <T> void deleteWhere(Class<T> type, String where) {
 		db.delete(getTableName(type), where, null);
+	}
+
+	public <T> int delete(DeleteQuery query) {
+		return byQuery(db, query);
 	}
 
 	public <T> void deleteAll(Class<T> type) {
@@ -88,8 +92,15 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 		return queryListMapper(query, type);
 	}
 
-	public <T> List<T> executeQuery(SelectQuery query, Class<T> type) {
-		return queryListMapper(query, type);
+	@SuppressWarnings("unchecked")
+	public <T> List<T> select(SelectQuery query) {
+		try {
+			Class clazz = Class.forName(query.entity().getCanonicalName());
+			return queryListMapper(query, clazz);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			return Collections.emptyList();
+		}
 	}
 
 	public <T> List<T> getAll(Class<T> type) {
@@ -195,6 +206,21 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 				nullableString(query.limit()));
 	}
 
+	private int byQuery(SQLiteDatabase db, UpdateQuery query, ContentValues values) {
+		return db.update(
+				query.table(),
+				values,
+				nullableString(query.where()),
+				nullableArrayOfStrings(query.whereArgs()));
+	}
+
+	private int byQuery(SQLiteDatabase db, DeleteQuery query) {
+		return db.delete(
+				query.table(),
+				nullableString(query.where()),
+				nullableArrayOfStrings(query.whereArgs()));
+	}
+
 	private <T> void valueAutoIncMapper(ContentValues values, Field field, T element) {
 		field.setAccessible(true);
 		try {
@@ -215,7 +241,6 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 			Log.e(TAG, "valueDaoMapper", e);
 		}
 	}
-
 
 	private <T> void valueMapper(ContentValues values, Field field, T element) {
 		field.setAccessible(true);

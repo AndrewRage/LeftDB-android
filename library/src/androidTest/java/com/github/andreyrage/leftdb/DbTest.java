@@ -9,16 +9,22 @@ import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
+import com.github.andreyrage.leftdb.entities.SimpleEntity;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 public class DbTest extends AndroidTestCase {
 
+	public static final String TAG = "DbTest";
+
 	private DBUtils dbUtils;
+
+	private CountDownLatch lock = new CountDownLatch(1);
 
 	@Override
 	protected void setUp() throws Exception {
@@ -237,7 +243,6 @@ public class DbTest extends AndroidTestCase {
 	}
 
 	public void testCorrectQueries() throws Exception {
-		String TAG = "DbTest";
 		SelectQuery emptySelectQuery = SelectQuery.builder().build();
 		Log.d(TAG, emptySelectQuery.toString());
 		DeleteQuery emptyDeleteQuery = DeleteQuery.builder().build();
@@ -246,19 +251,50 @@ public class DbTest extends AndroidTestCase {
 		Log.d(TAG, emptyUpdateQuery.toString());
 	}
 
-	public void testAsyncCall() throws Exception {
-		AsyncCall.make(new AsyncCall.Call<List<AllFields>>() {
-			@Override public List<AllFields> call() {
-				return dbUtils.executeQuery(SelectQuery.builder()
-						.table(AllFields.class.getSimpleName())
-						.where("id > ?")
-						.whereArgs(0).build(), AllFields.class);
-			}
-		}, new AsyncCall.Do<List<AllFields>>() {
-			@Override public void doNext(List<AllFields> allFields) {
-				assertNotNull(allFields);
-			}
-		}).call();
+	public void testSomeShits() throws Exception {
+		final AllFields test = new AllFields();
+		test.setId(12148301);
+		dbUtils.add(test);
+
+		List<AllFields> l = dbUtils.select(SelectQuery.builder()
+				.entity(AllFields.class)
+				.where("id > ?")
+				.whereArgs(120)
+				.build());
+		Log.d(TAG, String.valueOf(l.size()));
+		assertEquals(12148301, l.get(0).getId());
+
+		try {
+			AsyncCall.make(new AsyncCall.Call<List<AllFields>>() {
+				@Override public List<AllFields> call() {
+					return dbUtils.select(SelectQuery.builder()
+							.entity(AllFields.class)
+							.where("id > ?")
+							.whereArgs(120)
+							.build());
+				}
+			}, new AsyncCall.Do<List<AllFields>>() {
+				@Override public void doNext(List<AllFields> allFields) {
+					fail();
+				}
+			}).call();
+		} catch (Exception e) {
+			fail();
+		}
+	}
+
+	public void testSelectQueries() throws Exception {
+		SimpleEntity s = new SimpleEntity(123, "TestedCase");
+		dbUtils.add(s);
+		SelectQuery query = SelectQuery.builder()
+				.entity(SimpleEntity.class)
+				.where("name like ?")
+				.whereArgs("%ase%")
+				.build();
+		assertEquals(dbUtils.select(query).size(), 1);
+		SimpleEntity simpleEntity = (SimpleEntity) dbUtils.select(query).get(0);
+		assertEquals(simpleEntity.getId(), s.getId());
+		assertEquals(simpleEntity.getName(), s.getName());
 	}
 
 }

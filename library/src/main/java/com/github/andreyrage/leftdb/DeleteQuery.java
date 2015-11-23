@@ -5,7 +5,7 @@ import android.support.annotation.Nullable;
 
 import java.util.List;
 
-import static com.github.andreyrage.leftdb.Utils.checkNotNullOrEmpty;
+import static com.github.andreyrage.leftdb.Utils.checkNotNull;
 import static com.github.andreyrage.leftdb.Utils.nonNullString;
 import static com.github.andreyrage.leftdb.Utils.unmodifiableListOf;
 
@@ -14,20 +14,27 @@ import static com.github.andreyrage.leftdb.Utils.unmodifiableListOf;
  */
 public final class DeleteQuery {
 
-	@NonNull private final String table;
+	@NonNull private final Class<?> entity;
 
 	@NonNull private final String where;
 
 	@NonNull private final List<String> whereArgs;
 
-	private DeleteQuery(@NonNull String table, @NonNull String where, @NonNull List<String> whereArgs) {
-		this.table = table;
+	private DeleteQuery(@NonNull Class<?> entity, @NonNull String where, @NonNull List<String> whereArgs) {
+		this.entity = entity;
 		this.where = where;
 		this.whereArgs = whereArgs;
 	}
 
 	@NonNull public String table() {
-		return table;
+		if (entity.isAnnotationPresent(TableName.class)) {
+			return entity.getAnnotation(TableName.class).value();
+		}
+		return entity.getSimpleName();
+	}
+
+	@NonNull Class<?> entity() {
+		return entity;
 	}
 
 	@NonNull public String where() {
@@ -44,13 +51,13 @@ public final class DeleteQuery {
 
 		DeleteQuery that = (DeleteQuery) o;
 
-		return table.equals(that.table)
+		return entity.equals(that.entity)
 				&& where.equals(that.where)
 				&& whereArgs.equals(that.whereArgs);
 	}
 
 	@Override public int hashCode() {
-		int result = table.hashCode();
+		int result = entity.hashCode();
 		result = 31 * result + where.hashCode();
 		result = 31 * result + whereArgs.hashCode();
 		return result;
@@ -58,7 +65,7 @@ public final class DeleteQuery {
 
 	@Override public String toString() {
 		return "DeleteQuery{" +
-				"table='" + table + '\'' +
+				"entity='" + entity.getSimpleName() + '\'' +
 				", where='" + where + '\'' +
 				", whereArgs=" + whereArgs +
 				'}';
@@ -70,7 +77,7 @@ public final class DeleteQuery {
 
 	public static final class Builder {
 
-		private String table;
+		private Class<?> entity;
 
 		private String where;
 
@@ -79,9 +86,9 @@ public final class DeleteQuery {
 		Builder() {
 		}
 
-		@NonNull public Builder table(@NonNull String table) {
-			checkNotNullOrEmpty(table, "Table name is null or empty");
-			this.table = table;
+		@NonNull public Builder entity(@NonNull Class<?> entity) {
+			checkNotNull(entity, "Table name is null or empty");
+			this.entity = entity;
 			return this;
 		}
 
@@ -106,7 +113,7 @@ public final class DeleteQuery {
 			}
 
 			return new DeleteQuery(
-					table,
+					entity,
 					where,
 					whereArgs
 			);

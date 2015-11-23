@@ -10,7 +10,7 @@ import java.util.List;
  */
 public final class SelectQuery {
 
-	private final @NonNull String table;
+	private final @NonNull Class<?> entity;
 
 	private final boolean distinct;
 
@@ -28,12 +28,12 @@ public final class SelectQuery {
 
 	private final @NonNull String limit;
 
-	public SelectQuery(String table, boolean distinct,
+	public SelectQuery(Class<?> entity, boolean distinct,
 					   List<String> columns, String where,
 					   List<String> whereArgs, String groupBy,
 					   String having, String orderBy, String limit) {
 		this.distinct = distinct;
-		this.table = table;
+		this.entity = entity;
 		this.columns = columns;
 		this.where = where;
 		this.whereArgs = whereArgs;
@@ -48,7 +48,14 @@ public final class SelectQuery {
 	}
 
 	public String table() {
-		return table;
+		if (entity.isAnnotationPresent(TableName.class)) {
+			return entity.getAnnotation(TableName.class).value();
+		}
+		return entity.getSimpleName();
+	}
+
+	Class<?> entity() {
+		return entity;
 	}
 
 	public List<String> columns() {
@@ -90,7 +97,7 @@ public final class SelectQuery {
 		SelectQuery query = (SelectQuery) o;
 
 		return distinct == query.distinct
-				&& table.equals(query.table)
+				&& entity.equals(query.entity)
 				&& columns.equals(query.columns)
 				&& where.equals(query.where)
 				&& whereArgs.equals(query.whereArgs)
@@ -103,7 +110,7 @@ public final class SelectQuery {
 
 	@Override public int hashCode() {
 		int result = (distinct ? 1 : 0);
-		result = 31 * result + (table.hashCode());
+		result = 31 * result + (entity.hashCode());
 		result = 31 * result + (columns.hashCode());
 		result = 31 * result + (where.hashCode());
 		result = 31 * result + (whereArgs.hashCode());
@@ -116,7 +123,7 @@ public final class SelectQuery {
 
 	@Override public String toString() {
 		return "SelectQuery{" +
-				"table='" + table + '\'' +
+				"entity='" + entity.getSimpleName() + '\'' +
 				", distinct=" + distinct +
 				", columns=" + columns +
 				", where='" + where + '\'' +
@@ -130,7 +137,7 @@ public final class SelectQuery {
 
 	public static final class Builder {
 
-		private String table;
+		private Class<?> entity;
 
 		private boolean distinct;
 
@@ -148,9 +155,9 @@ public final class SelectQuery {
 
 		private String limit;
 
-		@NonNull public Builder table(@NonNull String table) {
-			Utils.checkNotNull(table, "Table name is null or empty");
-			this.table = table;
+		@NonNull public Builder entity(@NonNull Class<?> entity) {
+			Utils.checkNotNull(entity, "Table name is null or empty");
+			this.entity = entity;
 			return this;
 		}
 
@@ -225,7 +232,7 @@ public final class SelectQuery {
 			if (where == null && whereArgs != null && !whereArgs.isEmpty()) {
 				throw new IllegalStateException("You can not use whereArgs without where clause");
 			}
-			return new SelectQuery(table, distinct, columns,
+			return new SelectQuery(entity, distinct, columns,
 					where, whereArgs, groupBy, having,
 					orderBy, limit
 			);
