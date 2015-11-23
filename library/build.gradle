@@ -86,9 +86,12 @@ artifacts {
     archives sourcesJar
 }
 
+Properties bintrayProps = new Properties()
+bintrayProps.load(new FileInputStream("bintray.properties"))
+
 bintray {
-    user = project.BINTRAY_USER
-    key = project.BINTRAY_KEY
+    user = bintrayProps.BINTRAY_USER
+    key = bintrayProps.BINTRAY_KEY
     pkg {
         repo = 'maven'
         name = 'com.github.andreyrage.leftdb'
