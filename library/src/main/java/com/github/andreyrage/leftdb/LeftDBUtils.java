@@ -40,6 +40,10 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
+    public SQLiteDatabase getSQLiteDatabase() {
+        return db;
+    }
+
     @Override
     public void onCreate(SQLiteDatabase db) {
 
