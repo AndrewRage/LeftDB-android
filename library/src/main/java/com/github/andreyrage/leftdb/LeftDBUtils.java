@@ -7,11 +7,20 @@ import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.github.andreyrage.leftdb.annotation.ColumnAutoInc;
+import com.github.andreyrage.leftdb.annotation.ColumnChild;
+import com.github.andreyrage.leftdb.annotation.ColumnDAO;
+import com.github.andreyrage.leftdb.annotation.ColumnIgnore;
+import com.github.andreyrage.leftdb.annotation.ColumnName;
+import com.github.andreyrage.leftdb.annotation.TableName;
+import com.github.andreyrage.leftdb.utils.Serializer;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -31,6 +40,10 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
+    public SQLiteDatabase getSQLiteDatabase() {
+        return db;
+    }
+
     @Override
     public void onCreate(SQLiteDatabase db) {
 
@@ -48,7 +61,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     protected abstract String serializeObject(Object object);
 
-    protected abstract <T> T deserializeObject(String string, Class<T> tClass);
+    protected abstract <T> T deserializeObject(String string, Class<T> tClass, Type genericType);
 
     public <T> void deleteWhere(Class<T> type, String where) {
         db.delete(getTableName(type), where, null);
@@ -323,7 +336,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 				field.set(result, c);
 			} else if (field.isAnnotationPresent(ColumnDAO.class)) {
                 String value = cursor.getString(cursor.getColumnIndex(columnName));
-                field.set(result, value != null ? deserializeObject(value, fieldType) : null);
+                field.set(result, value != null ? deserializeObject(value, fieldType, field.getGenericType()) : null);
             } else if (Serializable.class.isAssignableFrom(fieldType.getClass())) {
 				byte[] bytes = cursor.getBlob(cursor.getColumnIndex(columnName));
 				if (bytes == null) {

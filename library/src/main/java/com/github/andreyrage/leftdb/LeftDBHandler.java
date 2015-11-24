@@ -112,7 +112,7 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 				}
 				db.beginTransaction();
 				try {
-					if (currentVersion == 0) {
+					if (currentVersion == 0 && !assetsDbExists()) {
 						mCallback.onCreate(db);
 					} else {
 						if (currentVersion > version) {
@@ -123,6 +123,8 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 					}
 					db.setVersion(version);
 					db.setTransactionSuccessful();
+				} catch (IOException e) {
+					e.printStackTrace();
 				} finally {
 					db.endTransaction();
 				}

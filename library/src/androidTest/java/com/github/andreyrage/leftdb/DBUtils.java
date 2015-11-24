@@ -10,7 +10,10 @@ import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
 
+import com.github.andreyrage.leftdb.utils.Serializer;
+
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 
 public class DBUtils extends LeftDBUtils {
@@ -40,7 +43,7 @@ public class DBUtils extends LeftDBUtils {
 	}
 
 	@Override
-	protected <T> T deserializeObject(String string, Class<T> tClass) {
+	protected <T> T deserializeObject(String string, Class<T> tClass, Type genericType) {
 		String[] byteValues = string.substring(1, string.length() - 1).split(",");
 		byte[] bytes = new byte[byteValues.length];
 		for (int i=0, len=bytes.length; i<len; i++) {

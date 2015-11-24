@@ -1,4 +1,4 @@
-package com.github.andreyrage.leftdb;
+package com.github.andreyrage.leftdb.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -10,8 +10,5 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ColumnChild {
-	String parentKey() default "id";
-	String foreignKey();
-
+public @interface ColumnIgnore {
 }
