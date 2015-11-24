@@ -11,13 +11,14 @@ import com.github.andreyrage.leftdb.entities.SerializableObject;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public class DbTest extends AndroidTestCase {
+public class DbAssetsTest extends AndroidTestCase {
 
-	private DBUtils dbUtils;
+	public DBUtils dbUtils;
 
 	@Override
 	protected void setUp() throws Exception {
@@ -64,6 +65,7 @@ public class DbTest extends AndroidTestCase {
 		dbUtils.add(allFields);
 		List<AllFields> dbList = dbUtils.getAll(AllFields.class);
 
+		assertEquals(1, dbUtils.count(AllFields.class));
 		assertEquals(1, dbList.size());
 		assertEquals(allFields, dbList.get(0));
 	}
@@ -95,6 +97,7 @@ public class DbTest extends AndroidTestCase {
 		dbUtils.add(allFields);
 		List<AllFields> dbList = dbUtils.getAll(AllFields.class);
 
+		assertEquals(1, dbUtils.count(AllFields.class));
 		assertEquals(1, dbList.size());
 		assertEquals(allFields, dbList.get(0));
 	}
@@ -106,7 +109,9 @@ public class DbTest extends AndroidTestCase {
 		dbUtils.add(object);
 		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
 
+		assertEquals(2, dbUtils.count(SerializableObject.class));
 		assertEquals(2, dbList.size());
+		assertEquals(1, dbUtils.count(SerializableObject.class, "id = 1"));
 		assertEquals(1, dbList.get(0).getId());
 		assertEquals(2, dbList.get(1).getId());
 	}
@@ -162,6 +167,25 @@ public class DbTest extends AndroidTestCase {
 		assertEquals(object2, dbList.get(0));
 	}
 
+	public void testGetAllLimit() throws Exception {
+		SerializableObject object1 = new SerializableObject(100, "simple name1", null);
+		SerializableObject object2 = new SerializableObject(101, "simple name2", null);
+		SerializableObject object3 = new SerializableObject(103, "simple name3", null);
+
+		List<SerializableObject> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+		list.add(object3);
+
+		dbUtils.add(list);
+		assertEquals(3, dbUtils.count(SerializableObject.class));
+
+		assertEquals(1, dbUtils.getAllLimited(SerializableObject.class, 1).size());
+		assertEquals(2, dbUtils.getAllLimited(SerializableObject.class, 2).size());
+		assertEquals(3, dbUtils.getAllLimited(SerializableObject.class, 3).size());
+		assertEquals(3, dbUtils.getAllLimited(SerializableObject.class, 4).size());
+	}
+
 	public void testDeleteAll() throws Exception {
 		SerializableObject object1 = new SerializableObject(100, "simple name", null);
 		SerializableObject object2 = new SerializableObject(101, "simple name", null);
@@ -171,9 +195,12 @@ public class DbTest extends AndroidTestCase {
 		list.add(object2);
 
 		dbUtils.add(list);
+		assertEquals(2, dbUtils.count(SerializableObject.class));
+
 		dbUtils.deleteAll(SerializableObject.class);
 		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
 
+		assertEquals(0, dbUtils.count(SerializableObject.class));
 		assertTrue(dbList.isEmpty());
 	}
 
@@ -191,6 +218,27 @@ public class DbTest extends AndroidTestCase {
 
 		assertEquals(1, dbList.size());
 		assertEquals(object2, dbList.get(0));
+	}
+
+	public void testDeleteListIds() throws Exception {
+		SerializableObject object1 = new SerializableObject(100, "simple name", null);
+		SerializableObject object2 = new SerializableObject(101, "simple name", null);
+		SerializableObject object3 = new SerializableObject(102, "simple name", null);
+
+		List<SerializableObject> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+		list.add(object3);
+
+		dbUtils.add(list);
+		assertEquals(3, dbUtils.count(SerializableObject.class));
+
+		dbUtils.delete(SerializableObject.class, "id", Arrays.asList((long) 101, (long) 102));
+		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
+
+		assertEquals(1, dbUtils.count(SerializableObject.class));
+		assertEquals(1, dbList.size());
+		assertEquals(object1, dbList.get(0));
 	}
 
 	public void testOneToOne() throws Exception {
