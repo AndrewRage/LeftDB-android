@@ -1,7 +1,7 @@
 package com.github.andreyrage.leftdb.entities;
 
-import com.github.andreyrage.leftdb.ColumnAutoInc;
-import com.github.andreyrage.leftdb.ColumnDAO;
+import com.github.andreyrage.leftdb.annotation.ColumnAutoInc;
+import com.github.andreyrage.leftdb.annotation.ColumnDAO;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

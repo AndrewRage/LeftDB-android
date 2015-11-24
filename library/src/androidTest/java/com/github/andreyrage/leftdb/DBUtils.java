@@ -2,6 +2,8 @@ package com.github.andreyrage.leftdb;
 
 import android.content.Context;
 
+import com.github.andreyrage.leftdb.utils.Serializer;
+
 import java.io.IOException;
 import java.util.Arrays;
 

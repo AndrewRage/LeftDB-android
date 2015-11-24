@@ -1,4 +1,4 @@
-package com.github.andreyrage.leftdb;
+package com.github.andreyrage.leftdb.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

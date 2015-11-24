@@ -1,6 +1,6 @@
 package com.github.andreyrage.leftdb.entities;
 
-import com.github.andreyrage.leftdb.ColumnAutoInc;
+import com.github.andreyrage.leftdb.annotation.ColumnAutoInc;
 
 /**
  * Created by rage on 11/18/15.

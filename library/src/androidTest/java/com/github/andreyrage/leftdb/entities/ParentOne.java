@@ -1,6 +1,6 @@
 package com.github.andreyrage.leftdb.entities;
 
-import com.github.andreyrage.leftdb.ColumnChild;
+import com.github.andreyrage.leftdb.annotation.ColumnChild;
 
 /**
  * Created by rage on 11/18/15.

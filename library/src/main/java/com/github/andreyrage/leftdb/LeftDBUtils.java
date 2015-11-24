@@ -7,6 +7,14 @@ import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.github.andreyrage.leftdb.annotation.ColumnAutoInc;
+import com.github.andreyrage.leftdb.annotation.ColumnChild;
+import com.github.andreyrage.leftdb.annotation.ColumnDAO;
+import com.github.andreyrage.leftdb.annotation.ColumnIgnore;
+import com.github.andreyrage.leftdb.annotation.ColumnName;
+import com.github.andreyrage.leftdb.annotation.TableName;
+import com.github.andreyrage.leftdb.utils.Serializer;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;

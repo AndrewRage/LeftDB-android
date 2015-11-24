@@ -1,4 +1,4 @@
-package com.github.andreyrage.leftdb;
+package com.github.andreyrage.leftdb.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -8,8 +8,8 @@ import java.lang.annotation.Target;
 /**
  * Created by Anton Maniskevich on 05.03.14.
  */
-@Target(ElementType.TYPE)
+@Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface TableName {
-	String value() default "";
+public @interface ColumnDAO {
+
 }

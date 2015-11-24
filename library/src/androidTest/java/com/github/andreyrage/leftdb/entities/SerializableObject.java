@@ -1,9 +1,9 @@
 package com.github.andreyrage.leftdb.entities;
 
-import com.github.andreyrage.leftdb.ColumnAutoInc;
-import com.github.andreyrage.leftdb.ColumnIgnore;
-import com.github.andreyrage.leftdb.ColumnName;
-import com.github.andreyrage.leftdb.TableName;
+import com.github.andreyrage.leftdb.annotation.ColumnAutoInc;
+import com.github.andreyrage.leftdb.annotation.ColumnIgnore;
+import com.github.andreyrage.leftdb.annotation.ColumnName;
+import com.github.andreyrage.leftdb.annotation.TableName;
 
 import java.io.Serializable;
 
