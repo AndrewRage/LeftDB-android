@@ -13,6 +13,9 @@ import com.github.andreyrage.leftdb.annotation.ColumnDAO;
 import com.github.andreyrage.leftdb.annotation.ColumnIgnore;
 import com.github.andreyrage.leftdb.annotation.ColumnName;
 import com.github.andreyrage.leftdb.annotation.TableName;
+import com.github.andreyrage.leftdb.queries.DeleteQuery;
+import com.github.andreyrage.leftdb.queries.SelectQuery;
+import com.github.andreyrage.leftdb.queries.UpdateQuery;
 import com.github.andreyrage.leftdb.utils.Serializer;
 
 import java.io.IOException;
@@ -24,8 +27,12 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+
+import static com.github.andreyrage.leftdb.utils.CheckNullUtils.nullableArrayOfStrings;
+import static com.github.andreyrage.leftdb.utils.CheckNullUtils.nullableString;
 
 public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
@@ -75,13 +82,25 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         deleteWhere(type, String.format("%s IN (%s)", columnId, TextUtils.join(",", ids)));
     }
 
+    public <T> int delete(DeleteQuery query) {
+        return byQuery(query);
+    }
+
     public int countResultsByQuery(String query) {
-        Cursor cursor = db.rawQuery(query, null);
-        if (cursor.moveToFirst()) {
-            return cursor.getCount();
+        return countResultsByCursor(db.rawQuery(query, null));
+    }
+
+    private int countResultsByCursor(Cursor cursor) {
+        int count = 0;
+        if (cursor != null && !cursor.isClosed() && cursor.moveToFirst()) {
+            count = cursor.getCount();
+            cursor.close();
         }
-        cursor.close();
-        return 0;
+        return count;
+    }
+
+    public int count(SelectQuery query) {
+        return countResultsByCursor(byQuery(query));
     }
 
     public <T> int count(Class<T> type, String where) {
@@ -95,6 +114,17 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     public <T> List<T> executeQuery(String query, Class<T> type) {
         return queryListMapper(query, type);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> List<T> select(SelectQuery query) {
+        try {
+            Class clazz = Class.forName(query.entity().getCanonicalName());
+            return queryListMapper(query, clazz);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
     }
 
     public <T> List<T> getAll(Class<T> type) {
@@ -114,14 +144,21 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     public <T> void add(List<T> elements, boolean useTransaction) {
         if (useTransaction) {
-            db.beginTransaction();
-        }
-        for (T value : elements) {
-            add(value);
-        }
-        if (useTransaction) {
-            db.setTransactionSuccessful();
-            db.endTransaction();
+            try {
+                db.beginTransaction();
+                for (T value : elements) {
+                    add(value);
+                }
+                db.setTransactionSuccessful();
+            } catch (Exception e) {
+                Log.e(TAG, "add list, use transaction", e);
+            } finally {
+                db.endTransaction();
+            }
+        } else {
+            for (T value : elements) {
+                add(value);
+            }
         }
     }
 
@@ -146,12 +183,13 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                 }
             }
         }
-        long count = db.insert(getTableName(element.getClass()), null, values);
+        long row = db.insertWithOnConflict(getTableName(element.getClass()),
+                null, values, SQLiteDatabase.CONFLICT_REPLACE);
         values.clear();
         if (isColumnChild) {
             addColumnChild(element);
         }
-        return count;
+        return row;
     }
 
     private <T> void addColumnChild(final T element) {
@@ -185,7 +223,35 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
+    public int update(UpdateQuery query, ContentValues values) {
+        return db.update(
+                query.table(),
+                values,
+                nullableString(query.where()),
+                nullableArrayOfStrings(query.whereArgs()));
+    }
+
     //INNER METHODS
+
+    private Cursor byQuery(SelectQuery query) {
+        return db.query(
+                query.distinct(),
+                query.table(),
+                nullableArrayOfStrings(query.columns()),
+                nullableString(query.where()),
+                nullableArrayOfStrings(query.whereArgs()),
+                nullableString(query.groupBy()),
+                nullableString(query.having()),
+                nullableString(query.orderBy()),
+                nullableString(query.limit()));
+    }
+
+    private int byQuery(DeleteQuery query) {
+        return db.delete(
+                query.table(),
+                nullableString(query.where()),
+                nullableArrayOfStrings(query.whereArgs()));
+    }
 
     private <T> void valueAutoIncMapper(ContentValues values, Field field, T element) {
         field.setAccessible(true);
@@ -263,9 +329,11 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
-    private <T> List<T> queryListMapper(String query, Class<T> type) {
+    private <T> List<T> queryListMapper(Cursor cursor, Class<T> type) {
         List<T> results = new ArrayList<>();
-        Cursor cursor = db.rawQuery(query, null);
+        if (cursor == null || cursor.isClosed()) {
+            return results;
+        }
         if (cursor.moveToFirst()) {
             do {
                 results.add(cursorMapper(cursor, type));
@@ -273,6 +341,14 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
         cursor.close();
         return results;
+    }
+
+    private <T> List<T> queryListMapper(String query, Class<T> type) {
+        return queryListMapper(db.rawQuery(query, null), type);
+    }
+
+    private <T> List<T> queryListMapper(SelectQuery query, Class<T> type) {
+        return queryListMapper(byQuery(query), type);
     }
 
     private <T> T cursorMapper(Cursor cursor, Class<T> type) {
@@ -492,8 +568,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     public <T> boolean isTableExists(T element) {
         Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name = ?", new String[] {"table", getTableName((Class) element)});
-        if (!cursor.moveToFirst())
-        {
+        if (!cursor.moveToFirst()) {
             return false;
         }
         int count = cursor.getInt(0);

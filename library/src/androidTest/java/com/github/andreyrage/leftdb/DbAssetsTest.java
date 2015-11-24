@@ -1,5 +1,6 @@
 package com.github.andreyrage.leftdb;
 
+import android.content.ContentValues;
 import android.test.AndroidTestCase;
 
 import com.github.andreyrage.leftdb.entities.AllFields;
@@ -8,6 +9,9 @@ import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
+import com.github.andreyrage.leftdb.queries.DeleteQuery;
+import com.github.andreyrage.leftdb.queries.SelectQuery;
+import com.github.andreyrage.leftdb.queries.UpdateQuery;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -24,7 +28,7 @@ public class DbAssetsTest extends AndroidTestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		dbUtils = DBUtils.newInstance(getContext(), "test.sqlite", 1);
-		assertNotNull(dbUtils.db);
+		assertNotNull(dbUtils.getSQLiteDatabase());
 	}
 
 	@Override
@@ -138,7 +142,7 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertNull(dbList.get(0).getObject());
 	}
 
-	public void testAddList() throws Exception {
+	public void testAddListWithTransaction() throws Exception {
 		SerializableObject object1 = new SerializableObject(100, "simple name", new SerializableObject());
 		SerializableObject object2 = new SerializableObject(101, "simple name", new SerializableObject());
 
@@ -147,6 +151,20 @@ public class DbAssetsTest extends AndroidTestCase {
 		list.add(object2);
 
 		dbUtils.add(list);
+		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
+
+		assertEquals(2, dbList.size());
+	}
+
+	public void testAddListWithoutTransaction() throws Exception {
+		SerializableObject object1 = new SerializableObject(100, "simple name", new SerializableObject());
+		SerializableObject object2 = new SerializableObject(101, "simple name", new SerializableObject());
+
+		List<SerializableObject> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+
+		dbUtils.add(list, false);
 		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
 
 		assertEquals(2, dbList.size());
@@ -281,5 +299,65 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals("child3", dbList.get(1).getChilds().get(0).getName());
 		assertEquals("child4", dbList.get(1).getChilds().get(1).getName());
 		assertEquals("child5", dbList.get(1).getChilds().get(2).getName());
+	}
+
+	public void testSelect() throws Exception {
+		SerializableObject object1 = new SerializableObject(100, "simple name", null);
+		SerializableObject object2 = new SerializableObject(101, "simple name", null);
+
+		List<SerializableObject> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+
+		dbUtils.add(list);
+		List<SerializableObject> dbList = dbUtils.select(
+				SelectQuery.builder()
+						.entity(SerializableObject.class)
+						.where("id = ?")
+						.whereArgs("101")
+						.build()
+		);
+
+		assertEquals(1, dbList.size());
+		assertNotSame(object2, dbList.get(0));
+	}
+
+	public void testDelete() throws Exception {
+		SerializableObject object1 = new SerializableObject(100, "simple name", null);
+		SerializableObject object2 = new SerializableObject(101, "simple name", null);
+
+		List<SerializableObject> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+
+		dbUtils.add(list);
+		dbUtils.delete(
+				DeleteQuery.builder()
+						.entity(SerializableObject.class)
+						.where("id = ?").whereArgs("100")
+						.build()
+		);
+		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals(1, dbUtils.count(SelectQuery.builder().entity(SerializableObject.class).build()));
+		assertEquals(object2, dbList.get(0));
+	}
+
+	public void testUpdate() throws Exception {
+		SerializableObject object = new SerializableObject(100, "simple name", null);
+
+		dbUtils.add(object);
+		ContentValues contentValues = new ContentValues();
+		contentValues.put("otherName", "New name");
+		dbUtils.update(
+				UpdateQuery.builder().table(SerializableObject.class).where("id = 100").build(),
+				contentValues
+		);
+		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
+
+		assertEquals(1, dbList.size());
+		assertNotSame(object, dbList.get(0));
+		assertEquals("New name", dbList.get(0).getName());
 	}
 }
