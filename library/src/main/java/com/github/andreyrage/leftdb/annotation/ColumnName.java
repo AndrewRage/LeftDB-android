@@ -1,4 +1,4 @@
-package com.github.andreyrage.leftdb;
+package com.github.andreyrage.leftdb.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -10,5 +10,6 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ColumnIgnore {
+public @interface ColumnName {
+	String value() default "";
 }

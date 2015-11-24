@@ -7,18 +7,27 @@ import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.github.andreyrage.leftdb.annotation.ColumnAutoInc;
+import com.github.andreyrage.leftdb.annotation.ColumnChild;
+import com.github.andreyrage.leftdb.annotation.ColumnDAO;
+import com.github.andreyrage.leftdb.annotation.ColumnIgnore;
+import com.github.andreyrage.leftdb.annotation.ColumnName;
+import com.github.andreyrage.leftdb.annotation.TableName;
+import com.github.andreyrage.leftdb.utils.Serializer;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallback {
+public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     private static final String TAG = LeftDBUtils.class.getName();
     protected LeftDBHandler dbHandler;
@@ -26,15 +35,18 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 
     protected void setDBContext(Context context, String name, int version) {
         dbHandler = new LeftDBHandler(context, name, version, this);
-        try {
-            dbHandler.createDataBase();
-            if (db != null && db.isOpen()) {
-            } else {
-                db = dbHandler.getWritableDatabase();
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "Create DB", e);
+        if (db == null || !db.isOpen()) {
+            db = dbHandler.getWritableDatabase();
         }
+    }
+
+    public SQLiteDatabase getSQLiteDatabase() {
+        return db;
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+
     }
 
     @Override
@@ -49,7 +61,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 
     protected abstract String serializeObject(Object object);
 
-    protected abstract <T> T deserializeObject(String string, Class<T> tClass);
+    protected abstract <T> T deserializeObject(String string, Class<T> tClass, Type genericType);
 
     public <T> void deleteWhere(Class<T> type, String where) {
         db.delete(getTableName(type), where, null);
@@ -70,6 +82,15 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
         }
         cursor.close();
         return 0;
+    }
+
+    public <T> int count(Class<T> type, String where) {
+        return countResultsByQuery(String.format("SELECT * FROM %s", getTableName((Class) type))
+                + (TextUtils.isEmpty(where) ? "" : " WHERE " + where));
+    }
+
+    public <T> int count(Class<T> type) {
+        return count(type, null);
     }
 
     public <T> List<T> executeQuery(String query, Class<T> type) {
@@ -315,7 +336,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 				field.set(result, c);
 			} else if (field.isAnnotationPresent(ColumnDAO.class)) {
                 String value = cursor.getString(cursor.getColumnIndex(columnName));
-                field.set(result, value != null ? deserializeObject(value, fieldType) : null);
+                field.set(result, value != null ? deserializeObject(value, fieldType, field.getGenericType()) : null);
             } else if (Serializable.class.isAssignableFrom(fieldType.getClass())) {
 				byte[] bytes = cursor.getBlob(cursor.getColumnIndex(columnName));
 				if (bytes == null) {
@@ -367,5 +388,116 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnVersionChangeCallba
 
     public LeftDBHandler getDbHandler() {
         return dbHandler;
+    }
+
+    //SQL UTILS
+    public <T> void createTables(SQLiteDatabase db, List<T> elements) {
+        for (T element : elements) {
+            createTable(db, element);
+        }
+    }
+
+    public <T> void createTable(SQLiteDatabase db, T element){
+        db.execSQL(createTableSQL(element));
+    }
+
+    public <T> String createTableSQL(T element) throws IllegalArgumentException {
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("CREATE TABLE ");
+        sqlBuilder.append(getTableName((Class) element));
+        sqlBuilder.append(" (");
+        int columnCount = 0;
+        for (Field field : ((Class) element).getDeclaredFields()) {
+            if (!field.isAnnotationPresent(ColumnIgnore.class)
+                    && !field.isAnnotationPresent(ColumnChild.class)) {
+                StringBuilder builder = new StringBuilder();
+                if (columnCount > 0) {
+                    builder.append(", ");
+                }
+
+                Class<?> fieldType = field.getType();
+                if (fieldType.isAssignableFrom(String.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" TEXT");
+                } else if (fieldType.isAssignableFrom(long.class) || fieldType.isAssignableFrom(Long.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
+                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
+                    }
+                } else if (fieldType.isAssignableFrom(int.class) || fieldType.isAssignableFrom(Integer.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
+                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
+                    }
+                } else if (fieldType.isAssignableFrom(short.class) || fieldType.isAssignableFrom(Short.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
+                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
+                    }
+                } else if (fieldType.isAssignableFrom(boolean.class) || fieldType.isAssignableFrom(Boolean.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                } else if (fieldType.isAssignableFrom(float.class) || fieldType.isAssignableFrom(Float.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" REAL");
+                } else if (fieldType.isAssignableFrom(double.class) || fieldType.isAssignableFrom(Double.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" REAL");
+                } else if (fieldType.isAssignableFrom(BigDecimal.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" TEXT");
+                } else if (fieldType.isAssignableFrom(Date.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                } else if (fieldType.isAssignableFrom(Calendar.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" INTEGER");
+                } else if (field.isAnnotationPresent(ColumnDAO.class)) {
+                    builder.append(getColumnName(field));
+                    builder.append(" TEXT");
+                } else if (Serializable.class.isAssignableFrom(fieldType.getClass())) {
+                    builder.append(getColumnName(field));
+                    builder.append(" BLOB");
+                }
+
+                if (builder.length() > 2) {
+                    sqlBuilder.append(builder);
+                    columnCount++;
+                }
+            }
+        }
+        if (columnCount == 0) {
+            throw new IllegalArgumentException("Cannot create a table without at least one column.");
+        }
+        sqlBuilder.append(" );");
+        return sqlBuilder.toString();
+    }
+
+    public <T> void deleteTables(SQLiteDatabase db, List<T> elements) {
+        for (T element : elements) {
+            deleteTable(db, element);
+        }
+    }
+
+    public <T> void deleteTable(SQLiteDatabase db, T element) {
+        db.execSQL(deleteTableSQL(element));
+    }
+
+    public <T> String deleteTableSQL(T element) {
+        return String.format("DROP TABLE IF EXISTS %s;", getTableName((Class) element));
+    }
+
+    public <T> boolean isTableExists(T element) {
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name = ?", new String[] {"table", getTableName((Class) element)});
+        if (!cursor.moveToFirst())
+        {
+            return false;
+        }
+        int count = cursor.getInt(0);
+        cursor.close();
+        return count > 0;
     }
 }
