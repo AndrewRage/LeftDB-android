@@ -1,1 +1,2 @@
 include ':sample', ':leftdb'
+project(':leftdb').projectDir = new File('library')

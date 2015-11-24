@@ -1,34 +1,11 @@
-apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: "com.jfrog.bintray"
+apply plugin: 'com.jfrog.bintray'
 
-group = project.GROUP_ID
+group = 'com.github.andreyrage'
 version = project.VERSION_NAME
 
-android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.1"
-
-    defaultConfig {
-        minSdkVersion 10
-        targetSdkVersion 23
-        versionCode Integer.parseInt(project.VERSION_CODE)
-        versionName project.VERSION_NAME
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-}
-
-dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-}
-
-def siteUrl = 'https://github.com/AndreyRage/LeftDB'      // Homepage URL of the library
-def gitUrl = 'https://github.com/AndreyRage/LeftDB.git'   // Git repository URL
+def siteUrl = 'https://github.com/AndreyRage/LeftDB'
+def gitUrl = 'https://github.com/AndreyRage/LeftDB.git'
 
 install {
     repositories.mavenInstaller {
@@ -36,13 +13,9 @@ install {
         pom {
             project {
                 packaging 'aar'
-
-                // Add your description here
                 name 'LeftDB'
                 description = 'LeftDB fork RightUtils db utils'
                 url siteUrl
-
-                // Set your license
                 licenses {
                     license {
                         name 'The Apache Software License, Version 2.0'
