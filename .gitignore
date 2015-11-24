@@ -49,3 +49,4 @@ build/
 # Secret keys
 app/crashlytics.properties
 app/src/main/res/values/secrets.xml
+library/gradle.properties
