@@ -177,11 +177,13 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     public <T> long add(final T element) {
         final ContentValues values = new ContentValues();
         boolean isColumnChild = false;
+        Field fieldAutoInc = null;
         for (Field value : element.getClass().getDeclaredFields()) {
             if (!value.isAnnotationPresent(ColumnIgnore.class)
                     && !Modifier.isStatic(value.getModifiers())) {
                 if (value.isAnnotationPresent(ColumnAutoInc.class)) {
                     valueAutoIncMapper(values, value, element);
+                    fieldAutoInc = value;
                 } else if (value.isAnnotationPresent(ColumnDAO.class)) {
                     valueDAOMapper(values, value, element);
                 } else if (value.isAnnotationPresent(ColumnChild.class)) {
@@ -194,6 +196,14 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         long row = db.insertWithOnConflict(getTableName(element.getClass()),
                 null, values, SQLiteDatabase.CONFLICT_REPLACE);
         values.clear();
+        if (row > 0 && fieldAutoInc != null) {
+            try {
+                fieldAutoInc.setAccessible(true);
+                fieldAutoInc.set(element, row);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
         if (isColumnChild) {
             addColumnChild(element);
         }

@@ -14,7 +14,7 @@ install {
             project {
                 packaging 'aar'
                 name 'LeftDB'
-                description = 'LeftDB fork RightUtils db utils'
+                description = 'LeftDB fork of the RightUtils db utils'
                 url siteUrl
                 licenses {
                     license {
@@ -79,7 +79,7 @@ bintray {
         publish = true
         version {
             name = project.VERSION_NAME
-            desc = 'LeftDB fork RightUtils db utils'
+            desc = 'LeftDB fork of the RightUtils db utils'
             released  = new Date()
             vcsTag = project.VERSION_NAME
         }
