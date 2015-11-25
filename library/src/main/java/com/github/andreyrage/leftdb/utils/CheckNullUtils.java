@@ -1,5 +1,7 @@
 package com.github.andreyrage.leftdb.utils;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import com.github.andreyrage.leftdb.interfaces.Func;
@@ -13,14 +15,15 @@ import java.util.List;
  */
 public class CheckNullUtils {
 
-    public static void checkNotNull(Object object, String message) {
+    public static void checkNotNull(@Nullable Object object, @NonNull String message) {
         if (object == null) {
             throw new NullPointerException(message);
         }
     }
 
     @SafeVarargs
-    public static <T, A> List<T> unmodifiableListOf(Class<T> clazz, Func<List<T>, A, Void> func, A... args) {
+    @NonNull
+    public static <T, A> List<T> unmodifiableListOf(Class<T> clazz, Func<List<T>, A, Void> func, @Nullable A... args) {
         if (args == null || args.length == 0) {
             return Collections.emptyList();
         } else {
@@ -32,17 +35,20 @@ public class CheckNullUtils {
         }
     }
 
-    public static String nullableString(String str) {
+    @Nullable
+    public static String nullableString(@Nullable String str) {
         return TextUtils.isEmpty(str) ? null : str;
     }
 
-    public static String[] nullableArrayOfStrings(List<String> list) {
+    @Nullable
+    public static String[] nullableArrayOfStrings(@Nullable List<String> list) {
         return list == null || list.isEmpty()
                 ? null
                 : list.toArray(new String[list.size()]);
     }
 
-    public static String nonNullString(String str) {
+    @NonNull
+    public static String nonNullString(@Nullable String str) {
         return str == null ? "" : str;
     }
 

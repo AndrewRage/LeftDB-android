@@ -1,5 +1,8 @@
 package com.github.andreyrage.leftdb.queries;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.github.andreyrage.leftdb.annotation.TableName;
 import com.github.andreyrage.leftdb.interfaces.Func;
 import com.github.andreyrage.leftdb.utils.CheckNullUtils;
@@ -11,15 +14,15 @@ import java.util.List;
  */
 public final class SelectQuery {
 
-    private final Class<?> entity;
+    private final @NonNull Class<?> entity;
     private final boolean distinct;
-    private final List<String> columns;
-    private final String where;
-    private final List<String> whereArgs;
-    private final String groupBy;
-    private final String having;
-    private final String orderBy;
-    private final String limit;
+    private final @NonNull List<String> columns;
+    private final @NonNull String where;
+    private final @NonNull List<String> whereArgs;
+    private final @NonNull String groupBy;
+    private final @NonNull String having;
+    private final @NonNull String orderBy;
+    private final @NonNull String limit;
 
     public SelectQuery(Class<?> entity, boolean distinct,
                        List<String> columns, String where,
@@ -151,19 +154,22 @@ public final class SelectQuery {
 
         private String limit;
 
-        public Builder entity(Class<?> entity) {
+        @NonNull
+        public Builder entity(@NonNull Class<?> entity) {
             CheckNullUtils.checkNotNull(entity, "Table name is null or empty");
             this.entity = entity;
             return this;
         }
 
+        @NonNull
         public Builder distinct(boolean distinct) {
             this.distinct = distinct;
             return this;
         }
 
 
-        public Builder columns(String... columns) {
+        @NonNull
+        public Builder columns(@Nullable String... columns) {
             this.columns = CheckNullUtils.unmodifiableListOf(String.class, new Func<List<String>, String, Void>() {
                 @Override
                 public Void invoke(List<String> strings, String o) {
@@ -174,13 +180,15 @@ public final class SelectQuery {
             return this;
         }
 
-        public Builder where(String where) {
+        @NonNull
+        public Builder where(@Nullable String where) {
             this.where = where;
             return this;
         }
 
 
-        public Builder whereArgs(Object... whereArgs) {
+        @NonNull
+        public Builder whereArgs(@Nullable Object... whereArgs) {
             this.whereArgs = CheckNullUtils.unmodifiableListOf(String.class, new Func<List<String>, Object, Void>() {
                 @Override
                 public Void invoke(List<String> strings, Object o) {
@@ -191,22 +199,26 @@ public final class SelectQuery {
             return this;
         }
 
-        public Builder groupBy(String groupBy) {
+        @NonNull
+        public Builder groupBy(@Nullable String groupBy) {
             this.groupBy = groupBy;
             return this;
         }
 
 
-        public Builder having(String having) {
+        @NonNull
+        public Builder having(@Nullable String having) {
             this.having = having;
             return this;
         }
 
-        public Builder orderBy(String orderBy) {
+        @NonNull
+        public Builder orderBy(@Nullable String orderBy) {
             this.orderBy = orderBy;
             return this;
         }
 
+        @NonNull
         public Builder limit(final int limit) {
             if (limit <= 0) {
                 throw new IllegalStateException("Parameter `limit` should be positive");
@@ -215,6 +227,7 @@ public final class SelectQuery {
             return this;
         }
 
+        @NonNull
         public Builder limit(final int offset, final int quantity) {
             if (offset < 0) {
                 throw new IllegalStateException("Parameter `offset` should not be negative");
@@ -226,6 +239,7 @@ public final class SelectQuery {
             return this;
         }
 
+        @NonNull
         public SelectQuery build() {
             if (where == null && whereArgs != null && !whereArgs.isEmpty()) {
                 throw new IllegalStateException("You can not use whereArgs without where clause");

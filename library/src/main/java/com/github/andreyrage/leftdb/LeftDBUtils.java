@@ -423,8 +423,6 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 			} else {
                 Log.w(TAG, String.format("In class '%s' type '%s' of field '%s' not supported.", result.getClass().getSimpleName(), fieldType.toString(), field.getName()));
             }
-        } catch (IllegalAccessException e) {
-            Log.e(TAG, "fieldMapper", e);
         } catch (Exception e) {
             Log.e(TAG, "fieldMapper", e);
         }

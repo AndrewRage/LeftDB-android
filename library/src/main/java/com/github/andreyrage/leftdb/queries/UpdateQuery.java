@@ -1,5 +1,8 @@
 package com.github.andreyrage.leftdb.queries;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.github.andreyrage.leftdb.annotation.TableName;
 import com.github.andreyrage.leftdb.interfaces.Func;
 
@@ -11,16 +14,17 @@ import static com.github.andreyrage.leftdb.utils.CheckNullUtils.unmodifiableList
 
 public final class UpdateQuery {
 
-    private final Class<?> entity;
-    private final String where;
-    private final List<String> whereArgs;
+    @NonNull private final Class<?> entity;
+    @NonNull private final String where;
+    @NonNull private final List<String> whereArgs;
 
-    private UpdateQuery(Class<?> entity, String where, List<String> whereArgs) {
+    private UpdateQuery(@NonNull Class<?> entity, @NonNull String where, @NonNull List<String> whereArgs) {
         this.entity = entity;
         this.where = where;
         this.whereArgs = whereArgs;
     }
 
+    @NonNull
     public String table() {
         if (entity.isAnnotationPresent(TableName.class)) {
             return entity.getAnnotation(TableName.class).value();
@@ -28,14 +32,17 @@ public final class UpdateQuery {
         return entity.getSimpleName();
     }
 
+    @NonNull
     Class<?> entity() {
         return entity;
     }
 
+    @NonNull
     public String where() {
         return where;
     }
 
+    @NonNull
     public List<String> whereArgs() {
         return whereArgs;
     }
@@ -69,6 +76,7 @@ public final class UpdateQuery {
                 '}';
     }
 
+    @NonNull
     public static Builder builder() {
         return new Builder();
     }
@@ -84,18 +92,21 @@ public final class UpdateQuery {
         Builder() {
         }
 
-        public Builder table(Class<?> entity) {
+        @NonNull
+        public Builder table(@NonNull Class<?> entity) {
             checkNotNull(entity, "Table name is null or empty");
             this.entity = entity;
             return this;
         }
 
-        public Builder where(String where) {
+        @NonNull
+        public Builder where(@Nullable String where) {
             this.where = nonNullString(where);
             return this;
         }
 
-        public Builder whereArgs(Object... whereArgs) {
+        @NonNull
+        public Builder whereArgs(@Nullable Object... whereArgs) {
             this.whereArgs = unmodifiableListOf(String.class, new Func<List<String>, Object, Void>() {
                 @Override
                 public Void invoke(List<String> strings, Object o) {
@@ -106,6 +117,7 @@ public final class UpdateQuery {
             return this;
         }
 
+        @NonNull
         public UpdateQuery build() {
             if (where == null && whereArgs != null && !whereArgs.isEmpty()) {
                 throw new IllegalStateException("You can not use whereArgs without where clause");
