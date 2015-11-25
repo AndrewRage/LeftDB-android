@@ -47,10 +47,6 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
-    public SQLiteDatabase getSQLiteDatabase() {
-        return db;
-    }
-
     @Override
     public void onCreate(SQLiteDatabase db) {
 
@@ -70,16 +66,16 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     protected abstract <T> T deserializeObject(String string, Class<T> tClass, Type genericType);
 
-    public <T> void deleteWhere(Class<T> type, String where) {
-        db.delete(getTableName(type), where, null);
+    public <T> int deleteWhere(Class<T> type, String where) {
+        return db.delete(getTableName(type), where, null);
     }
 
-    public <T> void deleteAll(Class<T> type) {
-        db.delete(getTableName(type), null, null);
+    public <T> int deleteAll(Class<T> type) {
+        return db.delete(getTableName(type), null, null);
     }
 
-    public <T> void delete(Class<T> type, String columnId, List<Long> ids) {
-        deleteWhere(type, String.format("%s IN (%s)", columnId, TextUtils.join(",", ids)));
+    public <T> int delete(Class<T> type, String columnId, List<Long> ids) {
+        return deleteWhere(type, String.format("%s IN (%s)", columnId, TextUtils.join(",", ids)));
     }
 
     public <T> int delete(DeleteQuery query) {
@@ -142,28 +138,40 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return queryListMapper(query, type);
     }
 
-    public <T> void add(List<T> elements, boolean useTransaction) {
+    /**
+     * @return the number of added rows OR -1 if any error
+     * */
+    public <T> int add(List<T> elements, boolean useTransaction) {
+        int count = 0;
         if (useTransaction) {
             try {
                 db.beginTransaction();
                 for (T value : elements) {
-                    add(value);
+                    long raw = add(value);
+                    if (raw > 0) {
+                        count++;
+                    }
                 }
                 db.setTransactionSuccessful();
             } catch (Exception e) {
+                count = -1;
                 Log.e(TAG, "add list, use transaction", e);
             } finally {
                 db.endTransaction();
             }
         } else {
             for (T value : elements) {
-                add(value);
+                long raw = add(value);
+                if (raw > 0) {
+                    count++;
+                }
             }
         }
+        return count;
     }
 
-    public <T> void add(List<T> elements) {
-        add(elements, true);
+    public <T> int add(List<T> elements) {
+        return add(elements, true);
     }
 
     public <T> long add(final T element) {
