@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import com.github.andreyrage.leftdb.entities.AllFields;
 import com.github.andreyrage.leftdb.entities.ChildMany;
 import com.github.andreyrage.leftdb.entities.ChildOne;
-import com.github.andreyrage.leftdb.utils.Serializer;
+import com.github.andreyrage.leftdb.utils.SerializeUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -55,7 +55,7 @@ public class DBUtilsMigration extends LeftDBUtils {
 	@Override
 	protected String serializeObject(Object object) {
 		try {
-			return Arrays.toString(Serializer.serialize(object));
+			return Arrays.toString(SerializeUtils.serialize(object));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -71,7 +71,7 @@ public class DBUtilsMigration extends LeftDBUtils {
 		}
 
 		try {
-			Object o = Serializer.deserialize(bytes);
+			Object o = SerializeUtils.deserialize(bytes);
 			if (o != null) {
 				return tClass.cast(o);
 			}

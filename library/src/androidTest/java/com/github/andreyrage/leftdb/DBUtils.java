@@ -10,7 +10,7 @@ import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
 
-import com.github.andreyrage.leftdb.utils.Serializer;
+import com.github.andreyrage.leftdb.utils.SerializeUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -35,7 +35,7 @@ public class DBUtils extends LeftDBUtils {
 	@Override
 	protected String serializeObject(Object object) {
 		try {
-			return Arrays.toString(Serializer.serialize(object));
+			return Arrays.toString(SerializeUtils.serialize(object));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -51,7 +51,7 @@ public class DBUtils extends LeftDBUtils {
 		}
 
 		try {
-			Object o = Serializer.deserialize(bytes);
+			Object o = SerializeUtils.deserialize(bytes);
 			if (o != null) {
 				return tClass.cast(o);
 			}

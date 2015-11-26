@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -17,7 +18,7 @@ import com.github.andreyrage.leftdb.annotation.TableName;
 import com.github.andreyrage.leftdb.queries.DeleteQuery;
 import com.github.andreyrage.leftdb.queries.SelectQuery;
 import com.github.andreyrage.leftdb.queries.UpdateQuery;
-import com.github.andreyrage.leftdb.utils.Serializer;
+import com.github.andreyrage.leftdb.utils.SerializeUtils;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -41,7 +42,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     protected LeftDBHandler dbHandler;
     protected SQLiteDatabase db;
 
-    protected void setDBContext(Context context, String name, int version) {
+    //rightutils compatibility
+    protected void setDBContext(@NonNull Context context, @NonNull String name, int version) {
         dbHandler = new LeftDBHandler(context, name, version, this);
         if (db == null || !db.isOpen()) {
             db = dbHandler.getWritableDatabase();
@@ -67,27 +69,31 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     protected abstract <T> T deserializeObject(String string, Class<T> tClass, Type genericType);
 
-    public <T> int deleteWhere(Class<T> type, String where) {
+    //rightutils compatibility
+    public <T> int deleteWhere(@NonNull Class<T> type, String where) {
         return db.delete(getTableName(type), where, null);
     }
 
-    public <T> int deleteAll(Class<T> type) {
+    //rightutils compatibility
+    public <T> int deleteAll(@NonNull Class<T> type) {
         return db.delete(getTableName(type), null, null);
     }
 
-    public <T> int delete(Class<T> type, String columnId, List<Long> ids) {
+    //rightutils compatibility
+    public <T> int delete(@NonNull Class<T> type, @NonNull String columnId, @NonNull List<Long> ids) {
         return deleteWhere(type, String.format("%s IN (%s)", columnId, TextUtils.join(",", ids)));
     }
 
-    public <T> int delete(DeleteQuery query) {
+    public <T> int delete(@NonNull DeleteQuery query) {
         return byQuery(query);
     }
 
-    public int countResultsByQuery(String query) {
+    //rightutils compatibility
+    public int countResultsByQuery(@NonNull String query) {
         return countResultsByCursor(db.rawQuery(query, null));
     }
 
-    private int countResultsByCursor(Cursor cursor) {
+    private int countResultsByCursor(@Nullable Cursor cursor) {
         int count = 0;
         if (cursor != null && !cursor.isClosed() && cursor.moveToFirst()) {
             count = cursor.getCount();
@@ -96,25 +102,28 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return count;
     }
 
-    public int count(SelectQuery query) {
+    public int count(@NonNull SelectQuery query) {
         return countResultsByCursor(byQuery(query));
     }
 
-    public <T> int count(Class<T> type, String where) {
-        return countResultsByQuery(String.format("SELECT * FROM %s", getTableName((Class) type))
+    public <T> int count(@NonNull Class<T> type, @Nullable String where) {
+        return countResultsByQuery(String.format("SELECT * FROM %s", getTableName(type))
                 + (TextUtils.isEmpty(where) ? "" : " WHERE " + where));
     }
 
-    public <T> int count(Class<T> type) {
+    public <T> int count(@NonNull Class<T> type) {
         return count(type, null);
     }
 
-    public <T> List<T> executeQuery(String query, Class<T> type) {
+    //rightutils compatibility
+    @NonNull
+    public <T> List<T> executeQuery(@NonNull String query, @NonNull Class<T> type) {
         return queryListMapper(query, type);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> List<T> select(SelectQuery query) {
+    @NonNull
+    public <T> List<T> select(@NonNull SelectQuery query) {
         try {
             Class clazz = Class.forName(query.entity().getCanonicalName());
             return queryListMapper(query, clazz);
@@ -124,17 +133,23 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
-    public <T> List<T> getAll(Class<T> type) {
+    //rightutils compatibility
+    @NonNull
+    public <T> List<T> getAll(@NonNull Class<T> type) {
         String query = String.format("select * from `%s`", getTableName(type));
         return queryListMapper(query, type);
     }
 
-    public <T> List<T> getAllLimited(Class<T> type, long limit) {
+    //rightutils compatibility
+    @NonNull
+    public <T> List<T> getAllLimited(@NonNull Class<T> type, long limit) {
         String query = String.format("select * from `%s` limit %d", getTableName(type), limit);
         return queryListMapper(query, type);
     }
 
-    public <T> List<T> getAllWhere(String where, Class<T> type) {
+    //rightutils compatibility
+    @NonNull
+    public <T> List<T> getAllWhere(@NonNull String where, @NonNull Class<T> type) {
         String query = String.format("select * from `%s` where %s", getTableName(type), where);
         return queryListMapper(query, type);
     }
@@ -175,10 +190,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return count;
     }
 
+    //rightutils compatibility
     public <T> int add(@NonNull List<T> elements) {
         return add(elements, true);
     }
 
+    //rightutils compatibility
     public <T> long add(@NonNull final T element) {
         final ContentValues values = new ContentValues();
         boolean isColumnChild = false;
@@ -215,7 +232,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return row;
     }
 
-    private <T> void addColumnChild(final T element) {
+    private <T> void addColumnChild(@NonNull final T element) {
         for (Field value : element.getClass().getDeclaredFields()) {
             if (value.isAnnotationPresent(ColumnChild.class)) {
                 value.setAccessible(true);
@@ -246,7 +263,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
-    public int update(UpdateQuery query, ContentValues values) {
+    public int update(@NonNull UpdateQuery query, @NonNull ContentValues values) {
         return db.update(
                 query.table(),
                 values,
@@ -256,7 +273,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     //INNER METHODS
 
-    private Cursor byQuery(SelectQuery query) {
+    private Cursor byQuery(@NonNull SelectQuery query) {
         return db.query(
                 query.distinct(),
                 query.table(),
@@ -269,14 +286,14 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                 nullableString(query.limit()));
     }
 
-    private int byQuery(DeleteQuery query) {
+    private int byQuery(@NonNull DeleteQuery query) {
         return db.delete(
                 query.table(),
                 nullableString(query.where()),
                 nullableArrayOfStrings(query.whereArgs()));
     }
 
-    private <T> void valueAutoIncMapper(ContentValues values, Field field, T element) {
+    private <T> void valueAutoIncMapper(@NonNull ContentValues values, @NonNull Field field, @NonNull T element) {
         field.setAccessible(true);
         try {
             Long id = (Long) field.get(element);
@@ -288,7 +305,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
-    private <T> void valueDAOMapper(ContentValues values, Field field, T element) {
+    private <T> void valueDAOMapper(@NonNull ContentValues values, @NonNull Field field, @NonNull T element) {
         field.setAccessible(true);
         try {
             values.put(getColumnName(field), field.get(element) != null ? serializeObject(field.get(element)) : null);
@@ -298,7 +315,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
 
-    private <T> void valueMapper(ContentValues values, Field field, T element) {
+    private <T> void valueMapper(@NonNull ContentValues values, @NonNull Field field, @NonNull T element) {
         field.setAccessible(true);
 		Class<?> fieldType = field.getType();
         try {
@@ -334,7 +351,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 				byte[] bytes = null;
                 if (field.get(element) != null) {
                     try {
-                        bytes = Serializer.serialize(field.get(element));
+                        bytes = SerializeUtils.serialize(field.get(element));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -352,7 +369,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
-    private <T> List<T> queryListMapper(Cursor cursor, Class<T> type) {
+    @NonNull
+    private <T> List<T> queryListMapper(@Nullable Cursor cursor, @NonNull Class<T> type) {
         List<T> results = new ArrayList<>();
         if (cursor == null || cursor.isClosed()) {
             return results;
@@ -366,15 +384,17 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return results;
     }
 
-    private <T> List<T> queryListMapper(String query, Class<T> type) {
+    @NonNull
+    private <T> List<T> queryListMapper(@NonNull String query, @NonNull Class<T> type) {
         return queryListMapper(db.rawQuery(query, null), type);
     }
 
-    private <T> List<T> queryListMapper(SelectQuery query, Class<T> type) {
+    @NonNull
+    private <T> List<T> queryListMapper(@NonNull SelectQuery query, @NonNull Class<T> type) {
         return queryListMapper(byQuery(query), type);
     }
 
-    private <T> T cursorMapper(Cursor cursor, Class<T> type) {
+    private <T> T cursorMapper(@NonNull Cursor cursor, @NonNull Class<T> type) {
         T result = null;
         try {
             result = type.newInstance();
@@ -391,7 +411,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return result;
     }
 
-    private <T> void fieldMapper(T result, Cursor cursor, final Field field, String columnName) {
+    private <T> void fieldMapper(@NonNull T result, @NonNull Cursor cursor, final Field field, @NonNull String columnName) {
         field.setAccessible(true);
 		Class<?> fieldType = field.getType();
         try {
@@ -441,7 +461,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 				if (bytes == null) {
 					field.set(result, null);
 				} else {
-					field.set(result, Serializer.deserialize(bytes));
+					field.set(result, SerializeUtils.deserialize(bytes));
 				}
 			} else {
                 Log.w(TAG, String.format("In class '%s' type '%s' of field '%s' not supported.", result.getClass().getSimpleName(), fieldType.toString(), field.getName()));
@@ -451,7 +471,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
-    private <T> String getTableName(Class<T> type) {
+    @NonNull
+    private <T> String getTableName(@NonNull Class<T> type) {
         String tableName = type.getSimpleName();
         if (type.isAnnotationPresent(TableName.class)) {
             tableName = type.getAnnotation(TableName.class).value();
@@ -459,7 +480,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return tableName;
     }
 
-    private String getColumnName(Field field) {
+    @NonNull
+    private String getColumnName(@NonNull Field field) {
         String columnName = field.getName();
         if (field.isAnnotationPresent(ColumnName.class)) {
             columnName = field.getAnnotation(ColumnName.class).value();
@@ -467,7 +489,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return columnName;
     }
 
-    private String getForeignKey(Field field) {
+    @NonNull
+    private String getForeignKey(@NonNull Field field) {
         String columnName = field.getName();
         if (field.isAnnotationPresent(ColumnChild.class)) {
             columnName = field.getAnnotation(ColumnChild.class).foreignKey();
@@ -475,7 +498,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return columnName;
     }
 
-    private String getParentKey(Field field) {
+    @NonNull
+    private String getParentKey(@NonNull Field field) {
         String columnName = field.getName();
         if (field.isAnnotationPresent(ColumnChild.class)) {
             columnName = field.getAnnotation(ColumnChild.class).parentKey();
@@ -489,17 +513,17 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     //SQL UTILS
 
-    public void createTables(SQLiteDatabase db, List<Class<?>> elements) {
+    public void createTables(@NonNull SQLiteDatabase db, @NonNull List<Class<?>> elements) {
         for (Class<?> element : elements) {
             createTable(db, element);
         }
     }
 
-    public void createTable(SQLiteDatabase db, Class<?> type){
+    public void createTable(@NonNull SQLiteDatabase db, @NonNull Class<?> type){
         db.execSQL(createTableSQL(type));
     }
 
-    private String createTableSQL(Class<?> type) throws IllegalArgumentException {
+    private String createTableSQL(@NonNull Class<?> type) throws IllegalArgumentException {
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("CREATE TABLE ");
         sqlBuilder.append(getTableName(type));
@@ -571,21 +595,21 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return sqlBuilder.toString();
     }
 
-    public void deleteTables(SQLiteDatabase db, List<Class<?>> elements) {
+    public void deleteTables(@NonNull SQLiteDatabase db, @NonNull List<Class<?>> elements) {
         for (Class<?> element : elements) {
             deleteTable(db, element);
         }
     }
 
-    public void deleteTable(SQLiteDatabase db, Class<?> type) {
+    public void deleteTable(@NonNull SQLiteDatabase db, @NonNull Class<?> type) {
         db.execSQL(deleteTableSQL(type));
     }
 
-    private String deleteTableSQL(Class<?> type) {
+    private String deleteTableSQL(@NonNull Class<?> type) {
         return String.format("DROP TABLE IF EXISTS %s;", getTableName(type));
     }
 
-    public boolean isTableExists(Class<?> type) {
+    public boolean isTableExists(@NonNull Class<?> type) {
         Cursor cursor = db.rawQuery(
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name = ?",
                 new String[] {"table", getTableName(type)});
