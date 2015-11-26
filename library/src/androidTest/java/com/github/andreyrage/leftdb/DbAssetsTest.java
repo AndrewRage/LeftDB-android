@@ -304,12 +304,12 @@ public class DbAssetsTest extends AndroidTestCase {
 		List<ChildMany> childList1 = new ArrayList<>();
 		childList1.add(new ChildMany("child1"));
 		childList1.add(new ChildMany("child2"));
-		ParentMany parentMany1 = new ParentMany(200, "parent1", childList1);
+		ParentMany parentMany1 = new ParentMany(200L, "parent1", childList1);
 		List<ChildMany> childList2 = new ArrayList<>();
 		childList2.add(new ChildMany("child3"));
 		childList2.add(new ChildMany("child4"));
 		childList2.add(new ChildMany("child5"));
-		ParentMany parentMany2 = new ParentMany(201, "parent2", childList2);
+		ParentMany parentMany2 = new ParentMany(201L, "parent2", childList2);
 		List<ParentMany> list = new ArrayList<>();
 		list.add(parentMany1);
 		list.add(parentMany2);

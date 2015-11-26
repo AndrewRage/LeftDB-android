@@ -274,8 +274,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     private <T> void valueAutoIncMapper(ContentValues values, Field field, T element) {
         field.setAccessible(true);
         try {
-            long id = (Long) field.get(element);
-            if (id > 0) {
+            Long id = (Long) field.get(element);
+            if (id != null && id > 0) {
                 values.put(getColumnName(field), id);
             }
         } catch (IllegalAccessException e) {
@@ -520,15 +520,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                 } else if (fieldType.isAssignableFrom(int.class) || fieldType.isAssignableFrom(Integer.class)) {
                     builder.append(getColumnName(field));
                     builder.append(" INTEGER");
-                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
-                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
-                    }
                 } else if (fieldType.isAssignableFrom(short.class) || fieldType.isAssignableFrom(Short.class)) {
                     builder.append(getColumnName(field));
                     builder.append(" INTEGER");
-                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
-                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
-                    }
                 } else if (fieldType.isAssignableFrom(boolean.class) || fieldType.isAssignableFrom(Boolean.class)) {
                     builder.append(getColumnName(field));
                     builder.append(" INTEGER");

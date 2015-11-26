@@ -9,7 +9,7 @@ import java.util.List;
  * Created by rage on 11/18/15.
  */
 public class ParentMany {
-    @ColumnAutoInc private long id;
+    @ColumnAutoInc private Long id;
     private String name;
     @ColumnChild(foreignKey = "parentId", parentKey = "id") private List<ChildMany> childs;
 
@@ -21,7 +21,7 @@ public class ParentMany {
         this.childs = childs;
     }
 
-    public ParentMany(long id, String name, List<ChildMany> childs) {
+    public ParentMany(Long id, String name, List<ChildMany> childs) {
         this.id = id;
         this.name = name;
         this.childs = childs;
@@ -57,11 +57,11 @@ public class ParentMany {
         return result;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
