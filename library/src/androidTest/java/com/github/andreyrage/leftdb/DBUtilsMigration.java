@@ -23,7 +23,7 @@ public class DBUtilsMigration extends LeftDBUtils {
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		super.onCreate(db);
-		db.execSQL(createTableSQL(AllFields.class));
+		createTable(db, AllFields.class);
 	}
 
 	@Override
