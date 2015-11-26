@@ -70,7 +70,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     protected abstract <T> T deserializeObject(String string, Class<T> tClass, Type genericType);
 
     //rightutils compatibility
-    public <T> int deleteWhere(@NonNull Class<T> type, String where) {
+    public <T> int deleteWhere(@NonNull Class<T> type, @Nullable String where) {
         return db.delete(getTableName(type), where, null);
     }
 

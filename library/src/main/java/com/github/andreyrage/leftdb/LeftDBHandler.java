@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.File;
@@ -24,7 +25,7 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 
 	private OnDbChangeCallback mCallback;
 
-	public LeftDBHandler(Context context, String name, int version, OnDbChangeCallback mCallback) {
+	public LeftDBHandler(@NonNull Context context, @NonNull String name, int version, @NonNull OnDbChangeCallback mCallback) {
 		super(context, name, null, version);
 		this.context = context;
 		this.name = name;
@@ -102,7 +103,7 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		return dataBase;
 	}
 
-	private void validateVersion(SQLiteDatabase db) {
+	private void validateVersion(@NonNull SQLiteDatabase db) {
 		int currentVersion = db.getVersion();
 		if (currentVersion != version) {
 			if (mCallback != null) {
