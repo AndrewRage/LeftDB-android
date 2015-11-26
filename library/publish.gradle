@@ -4,17 +4,20 @@ apply plugin: 'com.jfrog.bintray'
 group = 'com.github.andreyrage'
 version = project.VERSION_NAME
 
-def siteUrl = 'https://github.com/AndreyRage/LeftDB'
-def gitUrl = 'https://github.com/AndreyRage/LeftDB.git'
+def siteUrl = 'https://github.com/AndreyRage/LeftDB-android'
+def gitUrl = 'https://github.com/AndreyRage/LeftDB-android.git'
 
 install {
     repositories.mavenInstaller {
+        // This remove all dependencies from POM.xml
+        pom.whenConfigured {
+            pom -> pom.dependencies.clear()
+        }
         // This generates POM.xml with proper parameters
-        pom {
-            project {
+        pom.project {
                 packaging 'aar'
                 name 'LeftDB'
-                description = 'LeftDB fork RightUtils db utils'
+                description = 'LeftDB fork of the RightUtils db utils'
                 url siteUrl
                 licenses {
                     license {
@@ -35,7 +38,6 @@ install {
                     url siteUrl
 
                 }
-            }
         }
     }
 }
@@ -79,7 +81,7 @@ bintray {
         publish = true
         version {
             name = project.VERSION_NAME
-            desc = 'LeftDB fork RightUtils db utils'
+            desc = 'LeftDB fork of the RightUtils db utils'
             released  = new Date()
             vcsTag = project.VERSION_NAME
         }

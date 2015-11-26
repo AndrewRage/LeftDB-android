@@ -27,7 +27,7 @@ public class DBUtils extends LeftDBUtils {
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		super.onCreate(db);
-		db.execSQL(createTableSQL(AllFields.class));
+		createTable(db, AllFields.class);
 		createTable(db, SerializableObject.class);
 		createTables(db, Arrays.asList(ChildMany.class, ChildOne.class, ParentMany.class, ParentOne.class));
 	}

@@ -108,10 +108,14 @@ public class DbAssetsTest extends AndroidTestCase {
 	}
 
 	public void testAddEntityAutoInc() throws Exception {
-		SerializableObject object = new SerializableObject();
+		SerializableObject object1 = new SerializableObject();
+		dbUtils.add(object1);
+		assertEquals(1, object1.getId());
 
-		dbUtils.add(object);
-		dbUtils.add(object);
+		SerializableObject object2 = new SerializableObject();
+		dbUtils.add(object2);
+		assertEquals(2, object2.getId());
+
 		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
 
 		assertEquals(2, dbUtils.count(SerializableObject.class));
@@ -267,8 +271,23 @@ public class DbAssetsTest extends AndroidTestCase {
 	}
 
 	public void testOneToOne() throws Exception {
-		ParentOne parentOne1 = new ParentOne(200, new ChildOne("child1"));
-		ParentOne parentOne2 = new ParentOne(201, new ChildOne("child2"));
+		ParentOne parentOne1 = new ParentOne(200, "parent1", new ChildOne("child1"));
+		ParentOne parentOne2 = new ParentOne(201, "parent2", new ChildOne("child2"));
+		List<ParentOne> list = new ArrayList<>();
+		list.add(parentOne1);
+		list.add(parentOne2);
+
+		dbUtils.add(list);
+		List<ParentOne> dbList = dbUtils.getAll(ParentOne.class);
+
+		assertEquals(2, dbList.size());
+		assertEquals("child1", dbList.get(0).getChild().getName());
+		assertEquals("child2", dbList.get(1).getChild().getName());
+	}
+
+	public void testOneToOneAutoInc() throws Exception {
+		ParentOne parentOne1 = new ParentOne("parent1", new ChildOne("child1"));
+		ParentOne parentOne2 = new ParentOne("parent2", new ChildOne("child2"));
 		List<ParentOne> list = new ArrayList<>();
 		list.add(parentOne1);
 		list.add(parentOne2);
@@ -285,12 +304,39 @@ public class DbAssetsTest extends AndroidTestCase {
 		List<ChildMany> childList1 = new ArrayList<>();
 		childList1.add(new ChildMany("child1"));
 		childList1.add(new ChildMany("child2"));
-		ParentMany parentMany1 = new ParentMany(200, childList1);
+		ParentMany parentMany1 = new ParentMany(200L, "parent1", childList1);
 		List<ChildMany> childList2 = new ArrayList<>();
 		childList2.add(new ChildMany("child3"));
 		childList2.add(new ChildMany("child4"));
 		childList2.add(new ChildMany("child5"));
-		ParentMany parentMany2 = new ParentMany(201, childList2);
+		ParentMany parentMany2 = new ParentMany(201L, "parent2", childList2);
+		List<ParentMany> list = new ArrayList<>();
+		list.add(parentMany1);
+		list.add(parentMany2);
+
+		dbUtils.add(list);
+		List<ParentMany> dbList = dbUtils.getAll(ParentMany.class);
+
+		assertEquals(2, dbList.size());
+		assertEquals(2, dbList.get(0).getChilds().size());
+		assertEquals("child1", dbList.get(0).getChilds().get(0).getName());
+		assertEquals("child2", dbList.get(0).getChilds().get(1).getName());
+		assertEquals(3, dbList.get(1).getChilds().size());
+		assertEquals("child3", dbList.get(1).getChilds().get(0).getName());
+		assertEquals("child4", dbList.get(1).getChilds().get(1).getName());
+		assertEquals("child5", dbList.get(1).getChilds().get(2).getName());
+	}
+
+	public void testOneToManyAutoInc() throws Exception {
+		List<ChildMany> childList1 = new ArrayList<>();
+		childList1.add(new ChildMany("child1"));
+		childList1.add(new ChildMany("child2"));
+		ParentMany parentMany1 = new ParentMany("parent1", childList1);
+		List<ChildMany> childList2 = new ArrayList<>();
+		childList2.add(new ChildMany("child3"));
+		childList2.add(new ChildMany("child4"));
+		childList2.add(new ChildMany("child5"));
+		ParentMany parentMany2 = new ParentMany("parent2", childList2);
 		List<ParentMany> list = new ArrayList<>();
 		list.add(parentMany1);
 		list.add(parentMany2);

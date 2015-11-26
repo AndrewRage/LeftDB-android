@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -141,15 +142,17 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     /**
      * @return the number of added rows OR -1 if any error
      * */
-    public <T> int add(List<T> elements, boolean useTransaction) {
+    public <T> int add(@NonNull List<T> elements, boolean useTransaction) {
         int count = 0;
         if (useTransaction) {
             try {
                 db.beginTransaction();
                 for (T value : elements) {
-                    long raw = add(value);
-                    if (raw > 0) {
-                        count++;
+                    if (value != null) {
+                        long raw = add(value);
+                        if (raw > 0) {
+                            count++;
+                        }
                     }
                 }
                 db.setTransactionSuccessful();
@@ -161,27 +164,31 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             }
         } else {
             for (T value : elements) {
-                long raw = add(value);
-                if (raw > 0) {
-                    count++;
+                if (value != null) {
+                    long raw = add(value);
+                    if (raw > 0) {
+                        count++;
+                    }
                 }
             }
         }
         return count;
     }
 
-    public <T> int add(List<T> elements) {
+    public <T> int add(@NonNull List<T> elements) {
         return add(elements, true);
     }
 
-    public <T> long add(final T element) {
+    public <T> long add(@NonNull final T element) {
         final ContentValues values = new ContentValues();
         boolean isColumnChild = false;
+        Field fieldAutoInc = null;
         for (Field value : element.getClass().getDeclaredFields()) {
             if (!value.isAnnotationPresent(ColumnIgnore.class)
                     && !Modifier.isStatic(value.getModifiers())) {
                 if (value.isAnnotationPresent(ColumnAutoInc.class)) {
                     valueAutoIncMapper(values, value, element);
+                    fieldAutoInc = value;
                 } else if (value.isAnnotationPresent(ColumnDAO.class)) {
                     valueDAOMapper(values, value, element);
                 } else if (value.isAnnotationPresent(ColumnChild.class)) {
@@ -194,6 +201,14 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         long row = db.insertWithOnConflict(getTableName(element.getClass()),
                 null, values, SQLiteDatabase.CONFLICT_REPLACE);
         values.clear();
+        if (row > 0 && fieldAutoInc != null) {
+            try {
+                fieldAutoInc.setAccessible(true);
+                fieldAutoInc.set(element, row);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
         if (isColumnChild) {
             addColumnChild(element);
         }
@@ -264,8 +279,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     private <T> void valueAutoIncMapper(ContentValues values, Field field, T element) {
         field.setAccessible(true);
         try {
-            long id = (Long) field.get(element);
-            if (id > 0) {
+            Long id = (Long) field.get(element);
+            if (id != null && id > 0) {
                 values.put(getColumnName(field), id);
             }
         } catch (IllegalAccessException e) {
@@ -473,81 +488,79 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     //SQL UTILS
-    public <T> void createTables(SQLiteDatabase db, List<T> elements) {
-        for (T element : elements) {
+
+    public void createTables(SQLiteDatabase db, List<Class<?>> elements) {
+        for (Class<?> element : elements) {
             createTable(db, element);
         }
     }
 
-    public <T> void createTable(SQLiteDatabase db, T element){
-        db.execSQL(createTableSQL(element));
+    public void createTable(SQLiteDatabase db, Class<?> type){
+        db.execSQL(createTableSQL(type));
     }
 
-    public <T> String createTableSQL(T element) throws IllegalArgumentException {
+    private String createTableSQL(Class<?> type) throws IllegalArgumentException {
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("CREATE TABLE ");
-        sqlBuilder.append(getTableName((Class) element));
+        sqlBuilder.append(getTableName(type));
         sqlBuilder.append(" (");
         int columnCount = 0;
-        for (Field field : ((Class) element).getDeclaredFields()) {
+        for (Field field : type.getDeclaredFields()) {
             if (!field.isAnnotationPresent(ColumnIgnore.class)
                     && !field.isAnnotationPresent(ColumnChild.class)) {
-                StringBuilder builder = new StringBuilder();
-                if (columnCount > 0) {
-                    builder.append(", ");
-                }
+                String columnName = getColumnName(field);
+                if (!columnName.contains("$")) {
+                    StringBuilder builder = new StringBuilder();
+                    if (columnCount > 0) {
+                        builder.append(", ");
+                    }
 
-                Class<?> fieldType = field.getType();
-                if (fieldType.isAssignableFrom(String.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" TEXT");
-                } else if (fieldType.isAssignableFrom(long.class) || fieldType.isAssignableFrom(Long.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" INTEGER");
-                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
-                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
+                    Class<?> fieldType = field.getType();
+                    if (fieldType.isAssignableFrom(String.class)) {
+                        builder.append(columnName);
+                        builder.append(" TEXT");
+                    } else if (fieldType.isAssignableFrom(long.class) || fieldType.isAssignableFrom(Long.class)) {
+                        builder.append(columnName);
+                        builder.append(" INTEGER");
+                        if (field.isAnnotationPresent(ColumnAutoInc.class)) {
+                            builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
+                        }
+                    } else if (fieldType.isAssignableFrom(int.class) || fieldType.isAssignableFrom(Integer.class)) {
+                        builder.append(columnName);
+                        builder.append(" INTEGER");
+                    } else if (fieldType.isAssignableFrom(short.class) || fieldType.isAssignableFrom(Short.class)) {
+                        builder.append(columnName);
+                        builder.append(" INTEGER");
+                    } else if (fieldType.isAssignableFrom(boolean.class) || fieldType.isAssignableFrom(Boolean.class)) {
+                        builder.append(columnName);
+                        builder.append(" INTEGER");
+                    } else if (fieldType.isAssignableFrom(float.class) || fieldType.isAssignableFrom(Float.class)) {
+                        builder.append(columnName);
+                        builder.append(" REAL");
+                    } else if (fieldType.isAssignableFrom(double.class) || fieldType.isAssignableFrom(Double.class)) {
+                        builder.append(columnName);
+                        builder.append(" REAL");
+                    } else if (fieldType.isAssignableFrom(BigDecimal.class)) {
+                        builder.append(columnName);
+                        builder.append(" TEXT");
+                    } else if (fieldType.isAssignableFrom(Date.class)) {
+                        builder.append(columnName);
+                        builder.append(" INTEGER");
+                    } else if (fieldType.isAssignableFrom(Calendar.class)) {
+                        builder.append(columnName);
+                        builder.append(" INTEGER");
+                    } else if (field.isAnnotationPresent(ColumnDAO.class)) {
+                        builder.append(columnName);
+                        builder.append(" TEXT");
+                    } else if (Serializable.class.isAssignableFrom(fieldType.getClass())) {
+                        builder.append(columnName);
+                        builder.append(" BLOB");
                     }
-                } else if (fieldType.isAssignableFrom(int.class) || fieldType.isAssignableFrom(Integer.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" INTEGER");
-                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
-                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
-                    }
-                } else if (fieldType.isAssignableFrom(short.class) || fieldType.isAssignableFrom(Short.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" INTEGER");
-                    if (field.isAnnotationPresent(ColumnAutoInc.class)) {
-                        builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
-                    }
-                } else if (fieldType.isAssignableFrom(boolean.class) || fieldType.isAssignableFrom(Boolean.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" INTEGER");
-                } else if (fieldType.isAssignableFrom(float.class) || fieldType.isAssignableFrom(Float.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" REAL");
-                } else if (fieldType.isAssignableFrom(double.class) || fieldType.isAssignableFrom(Double.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" REAL");
-                } else if (fieldType.isAssignableFrom(BigDecimal.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" TEXT");
-                } else if (fieldType.isAssignableFrom(Date.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" INTEGER");
-                } else if (fieldType.isAssignableFrom(Calendar.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" INTEGER");
-                } else if (field.isAnnotationPresent(ColumnDAO.class)) {
-                    builder.append(getColumnName(field));
-                    builder.append(" TEXT");
-                } else if (Serializable.class.isAssignableFrom(fieldType.getClass())) {
-                    builder.append(getColumnName(field));
-                    builder.append(" BLOB");
-                }
 
-                if (builder.length() > 2) {
-                    sqlBuilder.append(builder);
-                    columnCount++;
+                    if (builder.length() > 2) {
+                        sqlBuilder.append(builder);
+                        columnCount++;
+                    }
                 }
             }
         }
@@ -558,22 +571,24 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return sqlBuilder.toString();
     }
 
-    public <T> void deleteTables(SQLiteDatabase db, List<T> elements) {
-        for (T element : elements) {
+    public void deleteTables(SQLiteDatabase db, List<Class<?>> elements) {
+        for (Class<?> element : elements) {
             deleteTable(db, element);
         }
     }
 
-    public <T> void deleteTable(SQLiteDatabase db, T element) {
-        db.execSQL(deleteTableSQL(element));
+    public void deleteTable(SQLiteDatabase db, Class<?> type) {
+        db.execSQL(deleteTableSQL(type));
     }
 
-    public <T> String deleteTableSQL(T element) {
-        return String.format("DROP TABLE IF EXISTS %s;", getTableName((Class) element));
+    private String deleteTableSQL(Class<?> type) {
+        return String.format("DROP TABLE IF EXISTS %s;", getTableName(type));
     }
 
-    public <T> boolean isTableExists(T element) {
-        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name = ?", new String[] {"table", getTableName((Class) element)});
+    public boolean isTableExists(Class<?> type) {
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name = ?",
+                new String[] {"table", getTableName(type)});
         if (!cursor.moveToFirst()) {
             return false;
         }
