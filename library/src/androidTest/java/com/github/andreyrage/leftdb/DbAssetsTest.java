@@ -4,8 +4,10 @@ import android.content.ContentValues;
 import android.test.AndroidTestCase;
 
 import com.github.andreyrage.leftdb.entities.AllFields;
+import com.github.andreyrage.leftdb.entities.AnnotationId;
 import com.github.andreyrage.leftdb.entities.ChildMany;
 import com.github.andreyrage.leftdb.entities.ChildOne;
+import com.github.andreyrage.leftdb.entities.NotAnnotationId;
 import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
@@ -245,6 +247,63 @@ public class DbAssetsTest extends AndroidTestCase {
 
 		assertEquals(1, dbList.size());
 		assertEquals(1, count);
+		assertEquals(object2, dbList.get(0));
+	}
+
+	public void testDeleteAnnotationObject() throws Exception {
+		AnnotationId object1 = new AnnotationId(100L, "simple name");
+		AnnotationId object2 = new AnnotationId(101L, "simple name");
+
+		List<AnnotationId> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+
+		dbUtils.add(list);
+		int count = dbUtils.delete(object1);
+		List<AnnotationId> dbList = dbUtils.getAll(AnnotationId.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals(1, count);
+		assertEquals(object2, dbList.get(0));
+	}
+
+	public void testDeleteNotAnnotationObject() throws Exception {
+		NotAnnotationId object1 = new NotAnnotationId(100L, "simple name");
+		NotAnnotationId object2 = new NotAnnotationId(101L, "simple name");
+
+		List<NotAnnotationId> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+
+		dbUtils.add(list);
+		int count = dbUtils.delete(object1);
+		List<NotAnnotationId> dbList = dbUtils.getAll(NotAnnotationId.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals(1, count);
+		assertEquals(object2, dbList.get(0));
+	}
+
+	public void testDeleteListObject() throws Exception {
+		SerializableObject object1 = new SerializableObject(100, "simple name", null);
+		SerializableObject object2 = new SerializableObject(101, "simple name", null);
+		SerializableObject object3 = new SerializableObject(102, "simple name", null);
+
+		List<SerializableObject> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+		list.add(object3);
+		dbUtils.add(list);
+
+		List<SerializableObject> deleteList = new ArrayList<>();
+		deleteList.add(object1);
+		deleteList.add(object3);
+		int count = dbUtils.delete(deleteList);
+
+		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals(2, count);
 		assertEquals(object2, dbList.get(0));
 	}
 
