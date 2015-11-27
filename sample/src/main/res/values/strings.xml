@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">LeftDB</string>
+    <string name="hint_add">Enter name</string>
+    <string name="button_add">Add</string>
+    <string name="button_delete">Delete</string>
+    <string name="button_delete_all">Delete all</string>
 </resources>

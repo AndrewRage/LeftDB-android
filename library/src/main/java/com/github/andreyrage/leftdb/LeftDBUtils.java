@@ -84,7 +84,26 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return deleteWhere(type, String.format("%s IN (%s)", columnId, TextUtils.join(",", ids)));
     }
 
-    public <T> int delete(@NonNull DeleteQuery query) {
+    public int delete(Object o) {
+        String idFieldName = getIdFieldName(o.getClass());
+        if (idFieldName == null) {
+            return 0;
+        }
+        Long id = null;
+        try {
+            Field idField = o.getClass().getDeclaredField(idFieldName);
+            idField.setAccessible(true);
+            id = (Long) idField.get(o);
+        } catch (Exception e) {
+            Log.e(TAG, "delete", e);
+        }
+        if (id == null) {
+            return 0;
+        }
+        return deleteWhere(o.getClass(), String.format("%s=%d", idFieldName, id));
+    }
+
+    public int delete(@NonNull DeleteQuery query) {
         return byQuery(query);
     }
 
@@ -505,6 +524,21 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             columnName = field.getAnnotation(ColumnChild.class).parentKey();
         }
         return columnName;
+    }
+
+    @Nullable
+    private <T> String getIdFieldName(Class<T> type) {
+        String id = null;
+        String possibleId = null;
+        for (Field field : type.getDeclaredFields()) {
+            if (field.isAnnotationPresent(ColumnAutoInc.class)) {
+                id = field.getName();
+            }
+            if ("id".equalsIgnoreCase(field.getName()) || "_id".equalsIgnoreCase(field.getName())) {
+                possibleId = field.getName();
+            }
+        }
+        return id != null ? id : possibleId;
     }
 
     public LeftDBHandler getDbHandler() {
