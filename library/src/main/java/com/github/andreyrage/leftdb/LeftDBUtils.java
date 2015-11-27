@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -77,6 +78,25 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     public <T> int delete(Class<T> type, String columnId, List<Long> ids) {
         return deleteWhere(type, String.format("%s IN (%s)", columnId, TextUtils.join(",", ids)));
+    }
+
+    public int delete(Object o) {
+        String idFieldName = getIdFieldName(o.getClass());
+        if (idFieldName == null) {
+            return 0;
+        }
+        Long id = null;
+        try {
+            Field idField = o.getClass().getDeclaredField(idFieldName);
+            idField.setAccessible(true);
+            id = (Long) idField.get(o);
+        } catch (Exception e) {
+            Log.e(TAG, "delete", e);
+        }
+        if (id == null) {
+            return 0;
+        }
+        return deleteWhere(o.getClass(), String.format("%s=%d", idFieldName, id));
     }
 
     public <T> int delete(DeleteQuery query) {
@@ -481,6 +501,21 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             columnName = field.getAnnotation(ColumnChild.class).parentKey();
         }
         return columnName;
+    }
+
+    @Nullable
+    private <T> String getIdFieldName(Class<T> type) {
+        String id = null;
+        String possibleId = null;
+        for (Field field : type.getDeclaredFields()) {
+            if (field.isAnnotationPresent(ColumnAutoInc.class)) {
+                id = field.getName();
+            }
+            if ("id".equalsIgnoreCase(field.getName()) || "_id".equalsIgnoreCase(field.getName())) {
+                possibleId = field.getName();
+            }
+        }
+        return id != null ? id : possibleId;
     }
 
     public LeftDBHandler getDbHandler() {

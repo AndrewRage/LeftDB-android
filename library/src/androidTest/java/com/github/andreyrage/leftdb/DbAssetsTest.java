@@ -59,7 +59,7 @@ public class DbAssetsTest extends AndroidTestCase {
 				true,
 				"simple string",
 				new BigDecimal(1345892734),
-				new Date(System.currentTimeMillis()),
+				new Date(),
 				Calendar.getInstance(),
 				parent,
 				parent,
@@ -229,6 +229,23 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals(0, dbUtils.count(SerializableObject.class));
 		assertEquals(2, count);
 		assertTrue(dbList.isEmpty());
+	}
+
+	public void testDeleteObject() throws Exception {
+		SerializableObject object1 = new SerializableObject(100, "simple name", null);
+		SerializableObject object2 = new SerializableObject(101, "simple name", null);
+
+		List<SerializableObject> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+
+		dbUtils.add(list);
+		int count = dbUtils.delete(object1);
+		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals(1, count);
+		assertEquals(object2, dbList.get(0));
 	}
 
 	public void testDeleteWhere() throws Exception {
