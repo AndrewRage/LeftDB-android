@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override public Object call() {
                         return mDbUtils.deleteAll(SimpleEntity.class);
                     }
-                });
+                }).call();
                 mEntityList.clear();
                 mAdapter.notifyDataSetChanged();
             }
