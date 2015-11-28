@@ -45,6 +45,16 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     protected SQLiteDatabase db;
 
     /**
+     * Initialize DBHandler
+     *
+     * @param context to use to open or create the database
+     * @param name of the database file; if the file exists in the directory it will be
+     *             copied, or if the file does not exist {@link #onCreate} will be used
+     *             to create database
+     * @param version number of the database (starting at 1); if the database is older,
+     *     {@link #onUpgrade} will be used to upgrade the database; if the database is
+     *     newer, {@link #onDowngrade} will be used to downgrade the database
+     *
      * Rightutils compatibility
      * */
     protected void setDBContext(@NonNull Context context, @NonNull String name, int version) {
@@ -54,26 +64,79 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
+    /**
+     * Called for the first time if the file does not exist in assets and need
+     * to create a database. This is where the creation of tables and the initial
+     * population of the tables should happen.
+     *
+     * @param db The database.
+     */
     @Override
     public void onCreate(SQLiteDatabase db) {
 
     }
 
+    /**
+     * Called when the database needs to be upgraded. The implementation
+     * should use this method to drop tables, add tables, or do anything else it
+     * needs to upgrade to the new schema version.
+     *
+     * @param db The database.
+     * @param oldVersion The old database version.
+     * @param newVersion The new database version.
+     */
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
     }
 
+    /**
+     * Called when the database needs to be downgraded. This is strictly similar to
+     * {@link #onUpgrade} method, but is called whenever current version is newer than requested one.
+     * However, this method is not abstract, so it is not mandatory for a customer to
+     * implement it. If not overridden, default implementation will reject downgrade and
+     * throws SQLiteException
+     *
+     * @param db The database.
+     * @param oldVersion The old database version.
+     * @param newVersion The new database version.
+     */
     @Override
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
     }
 
+    /**
+     * Called when need serialize object to string
+     *
+     * @param object the object that need serialize.
+     *
+     * @return string of serialized object
+     *
+     * */
     protected abstract String serializeObject(Object object);
 
+    /**
+     * Called when need deserialize string to object
+     *
+     * @param string the string that need deserialize.
+     * @param tClass the class of object that need deserialize
+     * @param genericType the generic type of object that need deserialize
+     *
+     * @return the object that was deserialize
+     *
+     * */
     protected abstract <T> T deserializeObject(String string, Class<T> tClass, Type genericType);
 
     /**
+     * Convenience method for deleting rows in the database.
+     *
+     * @param type the class of table to delete
+     * @param where the optional WHERE clause to apply when deleting.
+     *            Passing null will delete all rows.
+     *
+     * @return the number of deletes rows
+     *
      * Rightutils compatibility
      * */
     public <T> int deleteWhere(@NonNull Class<T> type, @Nullable String where) {
@@ -81,6 +144,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Convenience method for deleting all table rows in the database.
+     *
+     * @param type the class of table to delete
+     *
+     * @return the number of deletes rows
+     *
      * Rightutils compatibility
      * */
     public <T> int deleteAll(@NonNull Class<T> type) {
@@ -88,16 +157,31 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Convenience method for deleting rows in the database.
+     *
+     * @param type the class of table to delete
+     * @param columnId the column name
+     * @param ids values of column row that need to delete
+     *
+     * @return the number of deletes rows
+     *
      * Rightutils compatibility
      * */
     public <T> int delete(@NonNull Class<T> type, @NonNull String columnId, @NonNull List<Long> ids) {
         return deleteWhere(type, String.format("%s IN (%s)", columnId, TextUtils.join(",", ids)));
     }
 
-    public int delete(@NonNull Object o) {
+    /**
+     * Method for deleting row in the database.
+     *
+     * @param o the object that need to delete
+     *
+     * @return return true if row is deletes
+     * */
+    public boolean delete(@NonNull Object o) {
         String idFieldName = getIdFieldName(o.getClass());
         if (idFieldName == null) {
-            return 0;
+            return false;
         }
         Field idField = null;
         Long id = null;
@@ -109,11 +193,19 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             Log.e(TAG, "delete", e);
         }
         if (idField == null || id == null) {
-            return 0;
+            return false;
         }
-        return deleteWhere(o.getClass(), String.format("%s=%d", getColumnName(idField), id));
+        int count = deleteWhere(o.getClass(), String.format("%s=%d", getColumnName(idField), id));
+        return count > 0;
     }
 
+    /**
+     * Method for deleting rows in the database.
+     *
+     * @param collection the collection of similar objects that need to delete
+     *
+     * @return @return the number of deletes rows
+     * */
     public <T extends Collection<?>> int delete(@NonNull T collection) {
         if (collection.size() == 0) {
             return 0;
@@ -150,11 +242,24 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return delete(clazz, getColumnName(idField), idList);
     }
 
+    /**
+     * Method for deleting rows in the database.
+     *
+     * @param query {@link DeleteQuery}
+     *
+     * @return @return the number of deletes rows
+     * */
     public int delete(@NonNull DeleteQuery query) {
         return byQuery(query);
     }
 
     /**
+     * Method that return count of rows
+     *
+     * @param query the SQL query
+     *
+     * @return count
+     *
      * Rightutils compatibility
      * */
     public int countResultsByQuery(@NonNull String query) {
@@ -170,15 +275,37 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return count;
     }
 
+    /**
+     * Method that return count of rows
+     *
+     * @param query {@link SelectQuery}
+     *
+     * @return count or rows
+     * */
     public int count(@NonNull SelectQuery query) {
         return countResultsByCursor(byQuery(query));
     }
 
+    /**
+     * Method that return count of rows
+     *
+     * @param type the class of table
+     * @param where the where query
+     *
+     * @return count of rows
+     * */
     public <T> int count(@NonNull Class<T> type, @Nullable String where) {
         return countResultsByQuery(String.format("SELECT * FROM %s", getTableName(type))
                 + (TextUtils.isEmpty(where) ? "" : " WHERE " + where));
     }
 
+    /**
+     * Method that return count of rows
+     *
+     * @param type the class of table
+     *
+     * @return count of rows
+     * */
     public <T> int count(@NonNull Class<T> type) {
         return count(type, null);
     }

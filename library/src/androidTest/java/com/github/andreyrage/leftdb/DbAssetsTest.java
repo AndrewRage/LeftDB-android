@@ -245,11 +245,11 @@ public class DbAssetsTest extends AndroidTestCase {
 		list.add(object2);
 
 		dbUtils.add(list);
-		int count = dbUtils.delete(object1);
+		boolean isDeleted = dbUtils.delete(object1);
 		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
 
 		assertEquals(1, dbList.size());
-		assertEquals(1, count);
+		assertTrue(isDeleted);
 		assertEquals(object2, dbList.get(0));
 	}
 
@@ -262,11 +262,11 @@ public class DbAssetsTest extends AndroidTestCase {
 		list.add(object2);
 
 		dbUtils.add(list);
-		int count = dbUtils.delete(object1);
+		boolean isDeleted = dbUtils.delete(object1);
 		List<AnnotationId> dbList = dbUtils.getAll(AnnotationId.class);
 
 		assertEquals(1, dbList.size());
-		assertEquals(1, count);
+		assertTrue(isDeleted);
 		assertEquals(object2, dbList.get(0));
 	}
 
@@ -279,11 +279,11 @@ public class DbAssetsTest extends AndroidTestCase {
 		list.add(object2);
 
 		dbUtils.add(list);
-		int count = dbUtils.delete(object1);
+		boolean isDeleted = dbUtils.delete(object1);
 		List<NotAnnotationId> dbList = dbUtils.getAll(NotAnnotationId.class);
 
 		assertEquals(1, dbList.size());
-		assertEquals(1, count);
+		assertTrue(isDeleted);
 		assertEquals(object2, dbList.get(0));
 	}
 
@@ -296,11 +296,11 @@ public class DbAssetsTest extends AndroidTestCase {
 		list.add(object2);
 
 		dbUtils.add(list);
-		int count = dbUtils.delete(object1);
+		boolean isDeleted = dbUtils.delete(object1);
 		List<PrimaryKeyId> dbList = dbUtils.getAll(PrimaryKeyId.class);
 
 		assertEquals(1, dbList.size());
-		assertEquals(1, count);
+		assertTrue(isDeleted);
 		assertEquals(object2, dbList.get(0));
 	}
 
