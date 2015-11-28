@@ -70,14 +70,17 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(mLayoutManager);
         mAdapter = new EntityAdapter(mEntityList, new EntityAdapter.OnItemClickListener() {
             @Override public void onClick(final SimpleEntity simpleEntity) {
-                AsyncCall.make(new AsyncCall.Call() {
-                    @Override public Object call() {
-                        return mDbUtils.delete(simpleEntity);
-                    }
-                }).call();
                 int position = mEntityList.indexOf(simpleEntity);
-                mEntityList.remove(position);
-                mAdapter.notifyItemRemoved(position);
+                if (position >= 0) {
+                    AsyncCall.make(new AsyncCall.Call() {
+                        @Override
+                        public Object call() {
+                            return mDbUtils.delete(simpleEntity);
+                        }
+                    }).call();
+                    mEntityList.remove(position);
+                    mAdapter.notifyItemRemoved(position);
+                }
             }
         });
         recyclerView.setAdapter(mAdapter);
