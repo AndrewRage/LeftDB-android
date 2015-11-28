@@ -25,6 +25,9 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 
 	private OnDbChangeCallback mCallback;
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	public LeftDBHandler(@NonNull Context context, @NonNull String name, int version, @NonNull OnDbChangeCallback mCallback) {
 		super(context, name, null, version);
 		this.context = context;
@@ -51,6 +54,9 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		}
 	}
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	public void deleteDataBase() {
 		if (checkDataBase()) {
 			close();
@@ -68,6 +74,9 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		return dbFile.exists();
 	}
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	private void createDataBase() {
 		SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(getDbFile(), null);
 		db.close();
@@ -95,6 +104,9 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		return new File(dir, name);
 	}
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	public SQLiteDatabase openDataBase(int openType) throws SQLException {
 		String myPath = path + name;
 		dataBase = SQLiteDatabase.openDatabase(myPath, null, openType);
@@ -143,19 +155,31 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		super.close();
 	}
 
+	/**
+	 * Unsupported
+	 * */
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 	}
 
+	/**
+	 * Unsupported
+	 * */
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 	}
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	@Override
 	public SQLiteDatabase getWritableDatabase() {
 		return openDataBase(SQLiteDatabase.OPEN_READWRITE);
 	}
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	@Override
 	public SQLiteDatabase getReadableDatabase() {
 		return openDataBase(SQLiteDatabase.OPEN_READONLY);

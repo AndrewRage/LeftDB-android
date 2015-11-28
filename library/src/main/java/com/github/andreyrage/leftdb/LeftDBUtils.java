@@ -14,6 +14,7 @@ import com.github.andreyrage.leftdb.annotation.ColumnChild;
 import com.github.andreyrage.leftdb.annotation.ColumnDAO;
 import com.github.andreyrage.leftdb.annotation.ColumnIgnore;
 import com.github.andreyrage.leftdb.annotation.ColumnName;
+import com.github.andreyrage.leftdb.annotation.ColumnPrimaryKey;
 import com.github.andreyrage.leftdb.annotation.TableName;
 import com.github.andreyrage.leftdb.queries.DeleteQuery;
 import com.github.andreyrage.leftdb.queries.SelectQuery;
@@ -43,7 +44,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     protected LeftDBHandler dbHandler;
     protected SQLiteDatabase db;
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     protected void setDBContext(@NonNull Context context, @NonNull String name, int version) {
         dbHandler = new LeftDBHandler(context, name, version, this);
         if (db == null || !db.isOpen()) {
@@ -70,17 +73,23 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     protected abstract <T> T deserializeObject(String string, Class<T> tClass, Type genericType);
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     public <T> int deleteWhere(@NonNull Class<T> type, @Nullable String where) {
         return db.delete(getTableName(type), where, null);
     }
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     public <T> int deleteAll(@NonNull Class<T> type) {
         return db.delete(getTableName(type), null, null);
     }
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     public <T> int delete(@NonNull Class<T> type, @NonNull String columnId, @NonNull List<Long> ids) {
         return deleteWhere(type, String.format("%s IN (%s)", columnId, TextUtils.join(",", ids)));
     }
@@ -145,7 +154,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return byQuery(query);
     }
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     public int countResultsByQuery(@NonNull String query) {
         return countResultsByCursor(db.rawQuery(query, null));
     }
@@ -172,7 +183,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return count(type, null);
     }
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     @NonNull
     public <T> List<T> executeQuery(@NonNull String query, @NonNull Class<T> type) {
         return queryListMapper(query, type);
@@ -190,21 +203,27 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     @NonNull
     public <T> List<T> getAll(@NonNull Class<T> type) {
         String query = String.format("select * from `%s`", getTableName(type));
         return queryListMapper(query, type);
     }
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     @NonNull
     public <T> List<T> getAllLimited(@NonNull Class<T> type, long limit) {
         String query = String.format("select * from `%s` limit %d", getTableName(type), limit);
         return queryListMapper(query, type);
     }
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     @NonNull
     public <T> List<T> getAllWhere(@NonNull String where, @NonNull Class<T> type) {
         String query = String.format("select * from `%s` where %s", getTableName(type), where);
@@ -247,12 +266,16 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return count;
     }
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     public <T> int add(@NonNull List<T> elements) {
         return add(elements, true);
     }
 
-    //rightutils compatibility
+    /**
+     * Rightutils compatibility
+     * */
     public <T> long add(@NonNull final T element) {
         final ContentValues values = new ContentValues();
         boolean isColumnChild = false;
@@ -571,7 +594,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         String possibleRealId = null;
         for (Field field : type.getDeclaredFields()) {
             if (field.getType().isAssignableFrom(long.class) || field.getType().isAssignableFrom(Long.class)) {
-                if (field.isAnnotationPresent(ColumnAutoInc.class)) {
+                if (field.isAnnotationPresent(ColumnPrimaryKey.class) || field.isAnnotationPresent(ColumnAutoInc.class)) {
                     id = field.getName();
                     break;
                 }
@@ -629,6 +652,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                         builder.append(" INTEGER");
                         if (field.isAnnotationPresent(ColumnAutoInc.class)) {
                             builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
+                        } else if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY NOT NULL");
                         }
                     } else if (fieldType.isAssignableFrom(int.class) || fieldType.isAssignableFrom(Integer.class)) {
                         builder.append(columnName);

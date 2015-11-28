@@ -10,6 +10,7 @@ import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
 import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
+import com.github.andreyrage.leftdb.entities.PrimaryKeyId;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
 
 import com.github.andreyrage.leftdb.utils.SerializeUtils;
@@ -37,7 +38,8 @@ public class DBUtils extends LeftDBUtils {
 				ParentMany.class,
 				ParentOne.class,
 				AnnotationId.class,
-				NotAnnotationId.class
+				NotAnnotationId.class,
+				PrimaryKeyId.class
 		));
 	}
 

@@ -10,6 +10,7 @@ import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
 import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
+import com.github.andreyrage.leftdb.entities.PrimaryKeyId;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
 import com.github.andreyrage.leftdb.queries.DeleteQuery;
 import com.github.andreyrage.leftdb.queries.SelectQuery;
@@ -280,6 +281,23 @@ public class DbAssetsTest extends AndroidTestCase {
 		dbUtils.add(list);
 		int count = dbUtils.delete(object1);
 		List<NotAnnotationId> dbList = dbUtils.getAll(NotAnnotationId.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals(1, count);
+		assertEquals(object2, dbList.get(0));
+	}
+
+	public void testDeletePrimaryKeyObject() throws Exception {
+		PrimaryKeyId object1 = new PrimaryKeyId(100L, "simple name");
+		PrimaryKeyId object2 = new PrimaryKeyId(101L, "simple name");
+
+		List<PrimaryKeyId> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+
+		dbUtils.add(list);
+		int count = dbUtils.delete(object1);
+		List<PrimaryKeyId> dbList = dbUtils.getAll(PrimaryKeyId.class);
 
 		assertEquals(1, dbList.size());
 		assertEquals(1, count);
