@@ -29,6 +29,7 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -104,8 +105,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return deleteWhere(o.getClass(), String.format("%s=%d", getColumnName(idField), id));
     }
 
-    public <T extends List<?>> int delete(@NonNull T list) {
-        if (list.size() == 0) {
+    public <T extends Collection<?>> int delete(@NonNull T collection) {
+        if (collection.size() == 0) {
             return 0;
         }
         Class<?> clazz = null;
@@ -113,7 +114,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         Field idField = null;
         List<Long> idList = new ArrayList<>();
         try {
-            for (Object o : list) {
+            for (Object o : collection) {
                 if (o != null) {
                     if (idFieldName == null) {
                         idFieldName = getIdFieldName(o.getClass());

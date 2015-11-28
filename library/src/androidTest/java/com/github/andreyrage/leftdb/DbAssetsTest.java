@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DbAssetsTest extends AndroidTestCase {
 
@@ -296,6 +298,29 @@ public class DbAssetsTest extends AndroidTestCase {
 		dbUtils.add(list);
 
 		List<SerializableObject> deleteList = new ArrayList<>();
+		deleteList.add(object1);
+		deleteList.add(object3);
+		int count = dbUtils.delete(deleteList);
+
+		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals(2, count);
+		assertEquals(object2, dbList.get(0));
+	}
+
+	public void testDeleteSetObject() throws Exception {
+		SerializableObject object1 = new SerializableObject(100, "simple name", null);
+		SerializableObject object2 = new SerializableObject(101, "simple name", null);
+		SerializableObject object3 = new SerializableObject(102, "simple name", null);
+
+		List<SerializableObject> list = new ArrayList<>();
+		list.add(object1);
+		list.add(object2);
+		list.add(object3);
+		dbUtils.add(list);
+
+		Set<SerializableObject> deleteList = new HashSet<>();
 		deleteList.add(object1);
 		deleteList.add(object3);
 		int count = dbUtils.delete(deleteList);
