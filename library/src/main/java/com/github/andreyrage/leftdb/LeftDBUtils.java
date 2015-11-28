@@ -311,6 +311,13 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Get list of objects from database
+     *
+     * @param query the SQL query
+     * @param type the class to which you want to map result
+     *
+     * @return list of mapped objects
+     *
      * Rightutils compatibility
      * */
     @NonNull
@@ -318,6 +325,13 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return queryListMapper(query, type);
     }
 
+    /**
+     * Get list of objects from database
+     *
+     * @param query {@link SelectQuery}
+     *
+     * @return list of mapped objects
+     * */
     @SuppressWarnings("unchecked")
     @NonNull
     public <T> List<T> select(@NonNull SelectQuery query) {
@@ -331,6 +345,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Get list of objects from database
+     *
+     * @param type the class of table
+     *
+     * @return list of mapped objects
+     *
      * Rightutils compatibility
      * */
     @NonNull
@@ -340,6 +360,13 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Get list of objects from database
+     *
+     * @param type the class of table
+     * @param limit the limit the data amount
+     *
+     * @return list of mapped objects
+     *
      * Rightutils compatibility
      * */
     @NonNull
@@ -349,6 +376,13 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Get list of objects from database
+     *
+     * @param where the where query
+     * @param type the class of table
+     *
+     * @return list of mapped objects
+     *
      * Rightutils compatibility
      * */
     @NonNull
