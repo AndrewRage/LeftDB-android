@@ -392,6 +392,11 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Method for add rows in the database.
+     *
+     * @param elements the list of object that need to add in the database
+     * @param useTransaction is need use transaction?
+     *
      * @return the number of added rows OR -1 if any error
      * */
     public <T> int add(@NonNull List<T> elements, boolean useTransaction) {
@@ -428,6 +433,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Method for add rows in the database.
+     *
+     * @param elements the list of object that need to add in the database
+     *
+     * @return the number of added rows OR -1 if any error
+     *
      * Rightutils compatibility
      * */
     public <T> int add(@NonNull List<T> elements) {
@@ -435,6 +446,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Method for add row in the database.
+     *
+     * @param element the object that need to add in the database
+     *
+     * @return the row ID of the newly inserted row
+     *
      * Rightutils compatibility
      * */
     public <T> long add(@NonNull final T element) {
@@ -504,6 +521,15 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
+    /**
+     * Method for updating rows in the database.
+     *
+     * @param query {@link UpdateQuery}
+     * @param values a map from column names to new column values. null is a
+     *            valid value that will be translated to NULL.
+     *
+     * @return the row ID of the newly inserted row
+     * */
     public int update(@NonNull UpdateQuery query, @NonNull ContentValues values) {
         return db.update(
                 query.table(),
@@ -778,12 +804,24 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     //SQL UTILS
 
+    /**
+     * Create tables in database
+     *
+     * @param db The database.
+     * @param elements The list of the classes of objects that need to create
+     * */
     public void createTables(@NonNull SQLiteDatabase db, @NonNull List<Class<?>> elements) {
         for (Class<?> element : elements) {
             createTable(db, element);
         }
     }
 
+    /**
+     * Create table in database
+     *
+     * @param db The database.
+     * @param type The class of object that need to create
+     * */
     public void createTable(@NonNull SQLiteDatabase db, @NonNull Class<?> type){
         db.execSQL(createTableSQL(type));
     }
@@ -862,12 +900,24 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return sqlBuilder.toString();
     }
 
+    /**
+     * Delete tables in database
+     *
+     * @param db The database.
+     * @param elements The list of the classes of objects that need to delete
+     * */
     public void deleteTables(@NonNull SQLiteDatabase db, @NonNull List<Class<?>> elements) {
         for (Class<?> element : elements) {
             deleteTable(db, element);
         }
     }
 
+    /**
+     * Delete table in database
+     *
+     * @param db The database.
+     * @param type The class of object that need to delete
+     * */
     public void deleteTable(@NonNull SQLiteDatabase db, @NonNull Class<?> type) {
         db.execSQL(deleteTableSQL(type));
     }
@@ -876,6 +926,11 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return String.format("DROP TABLE IF EXISTS %s;", getTableName(type));
     }
 
+    /**
+     * Check is table exist in database
+     *
+     * @return true if table exist
+     * */
     public boolean isTableExists(@NonNull Class<?> type) {
         Cursor cursor = db.rawQuery(
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name = ?",
