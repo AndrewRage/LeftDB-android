@@ -29,14 +29,19 @@ public class AsyncCall<Result> extends AsyncTask<Void, Void, Result> {
         try {
             return mCall.call();
         } catch (Exception e) {
-            return (Result) new MonitorClass();
+            return (Result) new MonitorClass(e);
         }
     }
 
     @Override
     protected void onPostExecute(Result result) {
         if (result instanceof MonitorClass) {
-            throw new IllegalStateException("An error occurred while doing in background");
+            Exception originException = ((MonitorClass) result).getException();
+            IllegalStateException newException =
+                    new IllegalStateException("An error occurred while doing in background: "
+                            + originException.getMessage());
+            newException.setStackTrace(originException.getStackTrace());
+            throw newException;
         }
         if (mDoNext != null) {
             mDoNext.doNext(result);
@@ -56,6 +61,19 @@ public class AsyncCall<Result> extends AsyncTask<Void, Void, Result> {
     }
 
     private static class MonitorClass {
+        private Exception mException;
+
+        public MonitorClass(Exception exception) {
+            mException = exception;
+        }
+
+        public Exception getException() {
+            return mException;
+        }
+
+        public void setException(Exception exception) {
+            mException = exception;
+        }
     }
 
 }
