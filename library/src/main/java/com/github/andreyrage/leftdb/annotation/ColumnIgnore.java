@@ -7,6 +7,8 @@ import java.lang.annotation.Target;
 
 /**
  * Created by Anton Maniskevich on 05.03.14.
+ *
+ * Rightutils compatibility
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

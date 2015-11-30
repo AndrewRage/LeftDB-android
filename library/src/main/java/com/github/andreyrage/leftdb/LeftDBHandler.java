@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.File;
@@ -24,7 +25,10 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 
 	private OnDbChangeCallback mCallback;
 
-	public LeftDBHandler(Context context, String name, int version, OnDbChangeCallback mCallback) {
+	/**
+	 * Rightutils compatibility
+	 * */
+	public LeftDBHandler(@NonNull Context context, @NonNull String name, int version, @NonNull OnDbChangeCallback mCallback) {
 		super(context, name, null, version);
 		this.context = context;
 		this.name = name;
@@ -50,6 +54,9 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		}
 	}
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	public void deleteDataBase() {
 		if (checkDataBase()) {
 			close();
@@ -67,6 +74,9 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		return dbFile.exists();
 	}
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	private void createDataBase() {
 		SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(getDbFile(), null);
 		db.close();
@@ -94,6 +104,9 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		return new File(dir, name);
 	}
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	public SQLiteDatabase openDataBase(int openType) throws SQLException {
 		String myPath = path + name;
 		dataBase = SQLiteDatabase.openDatabase(myPath, null, openType);
@@ -102,7 +115,7 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		return dataBase;
 	}
 
-	private void validateVersion(SQLiteDatabase db) {
+	private void validateVersion(@NonNull SQLiteDatabase db) {
 		int currentVersion = db.getVersion();
 		if (currentVersion != version) {
 			if (mCallback != null) {
@@ -142,19 +155,31 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		super.close();
 	}
 
+	/**
+	 * Unsupported
+	 * */
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 	}
 
+	/**
+	 * Unsupported
+	 * */
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 	}
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	@Override
 	public SQLiteDatabase getWritableDatabase() {
 		return openDataBase(SQLiteDatabase.OPEN_READWRITE);
 	}
 
+	/**
+	 * Rightutils compatibility
+	 * */
 	@Override
 	public SQLiteDatabase getReadableDatabase() {
 		return openDataBase(SQLiteDatabase.OPEN_READONLY);
