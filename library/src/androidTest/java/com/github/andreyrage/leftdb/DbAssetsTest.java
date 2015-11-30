@@ -8,6 +8,8 @@ import com.github.andreyrage.leftdb.entities.AnnotationId;
 import com.github.andreyrage.leftdb.entities.ChildMany;
 import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
+import com.github.andreyrage.leftdb.entities.StringKeyChild;
+import com.github.andreyrage.leftdb.entities.StringKey;
 import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.PrimaryKeyId;
@@ -471,6 +473,24 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals("child3", dbList.get(1).getChilds().get(0).getName());
 		assertEquals("child4", dbList.get(1).getChilds().get(1).getName());
 		assertEquals("child5", dbList.get(1).getChilds().get(2).getName());
+	}
+
+	public void testOneToOneNotLonkKey() throws Exception {
+		StringKey parent1 = new StringKey("key1", "parent1", new StringKeyChild("child1"));
+		StringKey parent2 = new StringKey("key2", "parent2", new StringKeyChild("child2"));
+		StringKey parent3 = new StringKey(null, "parent2", new StringKeyChild("child3"));
+		List<StringKey> list = new ArrayList<>();
+		list.add(parent1);
+		list.add(parent2);
+		list.add(parent3);
+
+		dbUtils.add(list);
+		List<StringKey> dbList = dbUtils.getAll(StringKey.class);
+
+		assertEquals(3, dbList.size());
+		assertEquals("child1", dbList.get(0).getStringKeyChild().getName());
+		assertEquals("child2", dbList.get(1).getStringKeyChild().getName());
+		assertEquals("child3", dbList.get(2).getStringKeyChild().getName());
 	}
 
 	public void testSelect() throws Exception {

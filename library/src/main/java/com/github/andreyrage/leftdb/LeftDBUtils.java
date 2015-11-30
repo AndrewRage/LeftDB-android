@@ -3,7 +3,10 @@ package com.github.andreyrage.leftdb;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.CursorWindow;
+import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -41,6 +44,13 @@ import static com.github.andreyrage.leftdb.utils.CheckNullUtils.nullableString;
 public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     private static final String TAG = LeftDBUtils.class.getName();
+
+    protected static final int FIELD_TYPE_BLOB = 4;
+    protected static final int FIELD_TYPE_FLOAT = 2;
+    protected static final int FIELD_TYPE_INTEGER = 1;
+    protected static final int FIELD_TYPE_NULL = 0;
+    protected static final int FIELD_TYPE_STRING = 3;
+
     protected LeftDBHandler dbHandler;
     protected SQLiteDatabase db;
 
@@ -497,7 +507,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                 try {
                     Field parentKeyField = element.getClass().getDeclaredField(getParentKey(value));
                     parentKeyField.setAccessible(true);
-                    Long parentKeyValue = (Long) parentKeyField.get(element);
+                    Object parentKeyValue = parentKeyField.get(element);
                     String foreignKey = getForeignKey(value);
                     if (value.getType().isAssignableFrom(List.class)) {
                         List list = (List) value.get(element);
@@ -683,14 +693,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 		Class<?> fieldType = field.getType();
         try {
             if (field.isAnnotationPresent(ColumnChild.class)) {
-                String foreignKey = getForeignKey(field);
-                long parentKeyValue = cursor.getLong(cursor.getColumnIndex(getParentKey(field)));
-                if (fieldType.isAssignableFrom(List.class)) {
-                    field.set(result, getAllWhere(String.format("%s = %d", foreignKey, parentKeyValue), (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]));
-                } else {
-                    List resultList = getAllWhere(String.format("%s = %d", foreignKey, parentKeyValue), fieldType);
-                    field.set(result, resultList.isEmpty() ? null : resultList.get(0));
-                }
+                childFieldMapper(result, cursor, field, fieldType);
                 return;
             }
             if (cursor.isNull(cursor.getColumnIndex(columnName))) {
@@ -736,6 +739,73 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         } catch (Exception e) {
             Log.e(TAG, "fieldMapper", e);
         }
+    }
+
+    private <T> void childFieldMapper(@NonNull T result, @NonNull Cursor cursor, Field field, Class<?> fieldType) throws IllegalAccessException {
+        String foreignKey = getForeignKey(field);
+        int columnIndex = cursor.getColumnIndex(getParentKey(field));
+        final Object parentKeyValue;
+        if (getType(cursor, columnIndex) == FIELD_TYPE_BLOB) {
+            parentKeyValue = cursor.getBlob(columnIndex);
+        } else if (getType(cursor, columnIndex) == FIELD_TYPE_FLOAT) {
+            parentKeyValue = cursor.getDouble(columnIndex);
+        } else if (getType(cursor, columnIndex) == FIELD_TYPE_INTEGER) {
+            parentKeyValue = cursor.getLong(columnIndex);
+        } else if (getType(cursor, columnIndex) == FIELD_TYPE_STRING) {
+            parentKeyValue = cursor.getString(columnIndex);
+        } else {
+            parentKeyValue = null;
+        }
+        if (fieldType.isAssignableFrom(List.class)) {
+            field.set(result, getAllWhere(formatParentKeyValue(foreignKey, parentKeyValue), (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]));
+        } else {
+            List resultList = getAllWhere(formatParentKeyValue(foreignKey, parentKeyValue), fieldType);
+            field.set(result, resultList.isEmpty() ? null : resultList.get(0));
+        }
+    }
+
+    private String formatParentKeyValue(String foreignKey, Object parentKeyValue) {
+        if (parentKeyValue == null) {
+            return String.format("%s is null", foreignKey);
+        } else if (parentKeyValue instanceof String){
+            return String.format("%s = '%s'", foreignKey, parentKeyValue);
+        } else {
+            return String.format("%s = %s", foreignKey, String.valueOf(parentKeyValue));
+        }
+    }
+
+    private int getType(Cursor cursor, int column) {
+        int type = -1;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+            SQLiteCursor sqLiteCursor = (SQLiteCursor) cursor;
+            CursorWindow cursorWindow = sqLiteCursor.getWindow();
+            int pos = cursor.getPosition();
+            if (cursorWindow.isNull(pos, column)) {
+                type = FIELD_TYPE_NULL;
+            } else if (cursorWindow.isLong(pos, column)) {
+                type = FIELD_TYPE_INTEGER;
+            } else if (cursorWindow.isFloat(pos, column)) {
+                type = FIELD_TYPE_FLOAT;
+            } else if (cursorWindow.isString(pos, column)) {
+                type = FIELD_TYPE_STRING;
+            } else if (cursorWindow.isBlob(pos, column)) {
+                type = FIELD_TYPE_BLOB;
+            }
+        } else {
+            if (cursor.getType(column) == Cursor.FIELD_TYPE_NULL) {
+                type = FIELD_TYPE_NULL;
+            } else if (cursor.getType(column) == Cursor.FIELD_TYPE_INTEGER) {
+                type = FIELD_TYPE_INTEGER;
+            } else if (cursor.getType(column) == Cursor.FIELD_TYPE_FLOAT) {
+                type = FIELD_TYPE_FLOAT;
+            } else if (cursor.getType(column) == Cursor.FIELD_TYPE_STRING) {
+                type = FIELD_TYPE_STRING;
+            } else if (cursor.getType(column) == Cursor.FIELD_TYPE_BLOB) {
+                type = FIELD_TYPE_BLOB;
+            }
+        }
+
+        return type;
     }
 
     @NonNull
@@ -846,44 +916,77 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                     if (fieldType.isAssignableFrom(String.class)) {
                         builder.append(columnName);
                         builder.append(" TEXT");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     } else if (fieldType.isAssignableFrom(long.class) || fieldType.isAssignableFrom(Long.class)) {
                         builder.append(columnName);
                         builder.append(" INTEGER");
                         if (field.isAnnotationPresent(ColumnAutoInc.class)) {
-                            builder.append(" PRIMARY KEY AUTOINCREMENT NOT NULL");
+                            builder.append(" PRIMARY KEY AUTOINCREMENT");
                         } else if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
-                            builder.append(" PRIMARY KEY NOT NULL");
+                            builder.append(" PRIMARY KEY");
                         }
                     } else if (fieldType.isAssignableFrom(int.class) || fieldType.isAssignableFrom(Integer.class)) {
                         builder.append(columnName);
                         builder.append(" INTEGER");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     } else if (fieldType.isAssignableFrom(short.class) || fieldType.isAssignableFrom(Short.class)) {
                         builder.append(columnName);
                         builder.append(" INTEGER");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     } else if (fieldType.isAssignableFrom(boolean.class) || fieldType.isAssignableFrom(Boolean.class)) {
                         builder.append(columnName);
                         builder.append(" INTEGER");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     } else if (fieldType.isAssignableFrom(float.class) || fieldType.isAssignableFrom(Float.class)) {
                         builder.append(columnName);
                         builder.append(" REAL");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     } else if (fieldType.isAssignableFrom(double.class) || fieldType.isAssignableFrom(Double.class)) {
                         builder.append(columnName);
                         builder.append(" REAL");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     } else if (fieldType.isAssignableFrom(BigDecimal.class)) {
                         builder.append(columnName);
                         builder.append(" TEXT");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     } else if (fieldType.isAssignableFrom(Date.class)) {
                         builder.append(columnName);
                         builder.append(" INTEGER");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     } else if (fieldType.isAssignableFrom(Calendar.class)) {
                         builder.append(columnName);
                         builder.append(" INTEGER");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     } else if (field.isAnnotationPresent(ColumnDAO.class)) {
                         builder.append(columnName);
                         builder.append(" TEXT");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     } else if (Serializable.class.isAssignableFrom(fieldType.getClass())) {
                         builder.append(columnName);
                         builder.append(" BLOB");
+                        if (field.isAnnotationPresent(ColumnPrimaryKey.class)) {
+                            builder.append(" PRIMARY KEY");
+                        }
                     }
 
                     if (builder.length() > 2) {
