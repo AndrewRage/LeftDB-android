@@ -4,13 +4,20 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.github.andreyrage.leftdb.entities.AllFields;
+import com.github.andreyrage.leftdb.entities.AnnotationId;
 import com.github.andreyrage.leftdb.entities.ChildMany;
 import com.github.andreyrage.leftdb.entities.ChildOne;
+import com.github.andreyrage.leftdb.entities.FloatKey;
+import com.github.andreyrage.leftdb.entities.FloatKeyChild;
+import com.github.andreyrage.leftdb.entities.NotAnnotationId;
+import com.github.andreyrage.leftdb.entities.StringKeyChild;
+import com.github.andreyrage.leftdb.entities.StringKey;
 import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
+import com.github.andreyrage.leftdb.entities.PrimaryKeyId;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
 
-import com.github.andreyrage.leftdb.utils.Serializer;
+import com.github.andreyrage.leftdb.utils.SerializeUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -29,13 +36,25 @@ public class DBUtils extends LeftDBUtils {
 		super.onCreate(db);
 		createTable(db, AllFields.class);
 		createTable(db, SerializableObject.class);
-		createTables(db, Arrays.asList(ChildMany.class, ChildOne.class, ParentMany.class, ParentOne.class));
+		createTables(db, Arrays.asList(
+				ChildMany.class,
+				ChildOne.class,
+				ParentMany.class,
+				ParentOne.class,
+				AnnotationId.class,
+				NotAnnotationId.class,
+				PrimaryKeyId.class,
+				StringKey.class,
+				StringKeyChild.class,
+				FloatKey.class,
+				FloatKeyChild.class
+		));
 	}
 
 	@Override
 	protected String serializeObject(Object object) {
 		try {
-			return Arrays.toString(Serializer.serialize(object));
+			return Arrays.toString(SerializeUtils.serialize(object));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -51,7 +70,7 @@ public class DBUtils extends LeftDBUtils {
 		}
 
 		try {
-			Object o = Serializer.deserialize(bytes);
+			Object o = SerializeUtils.deserialize(bytes);
 			if (o != null) {
 				return tClass.cast(o);
 			}
