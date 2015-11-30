@@ -16,7 +16,7 @@ import com.github.andreyrage.leftdb.queries.SelectQuery;
 import com.github.andreyrage.leftdb.sample.R;
 import com.github.andreyrage.leftdb.sample.adapters.EntityAdapter;
 import com.github.andreyrage.leftdb.sample.entities.SimpleEntity;
-import com.github.andreyrage.leftdb.sample.utils.DbUtils;
+import com.github.andreyrage.leftdb.sample.helpers.DbHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,14 +27,14 @@ public class MainActivity extends AppCompatActivity {
     private EntityAdapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
     private List<SimpleEntity> mEntityList = new ArrayList<>();
-    private DbUtils mDbUtils;
+    private DbHelper mDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mDbUtils = DbUtils.getInstance(this);
+        mDbHelper = DbHelper.getInstance(this);
 
         mEditText = (EditText) findViewById(R.id.edit_text);
         mEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
             @Override public void onClick(View v) {
                 AsyncCall.make(new AsyncCall.Call() {
                     @Override public Object call() {
-                        return mDbUtils.deleteAll(SimpleEntity.class);
+                        return mDbHelper.deleteAll(SimpleEntity.class);
                     }
                 }).call();
                 mEntityList.clear();
@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
                     AsyncCall.make(new AsyncCall.Call() {
                         @Override
                         public Object call() {
-                            return mDbUtils.delete(simpleEntity);
+                            return mDbHelper.delete(simpleEntity);
                         }
                     }).call();
                     mEntityList.remove(position);
@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
 
         AsyncCall.make(new AsyncCall.Call<List<SimpleEntity>>() {
             @Override public List<SimpleEntity> call() {
-                return mDbUtils.select(
+                return mDbHelper.select(
                         SelectQuery.builder()
                                 .entity(SimpleEntity.class)
                                 .orderBy("id desc")
@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             final SimpleEntity entity = new SimpleEntity(mEditText.getText().toString());
             AsyncCall.make(new AsyncCall.Call<Long>() {
                 @Override public Long call() {
-                    return mDbUtils.add(entity);
+                    return mDbHelper.add(entity);
                 }
             }, new AsyncCall.Do<Long>() {
                 @Override public void doNext(Long aLong) {

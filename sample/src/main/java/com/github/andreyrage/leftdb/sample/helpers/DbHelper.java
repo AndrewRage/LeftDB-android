@@ -1,4 +1,4 @@
-package com.github.andreyrage.leftdb.sample.utils;
+package com.github.andreyrage.leftdb.sample.helpers;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -13,21 +13,21 @@ import java.lang.reflect.Type;
  * eKreative
  * Created by rage on 11/26/15.
  */
-public class DbUtils extends LeftDBUtils {
-    private static volatile DbUtils sInstance;
+public class DbHelper extends LeftDBUtils {
+    private static volatile DbHelper sInstance;
     private final Gson mGson;
 
-    private DbUtils() {
+    private DbHelper() {
         mGson = new Gson();
     }
 
-    public static DbUtils getInstance(Context context) {
-        DbUtils localInstance = sInstance;
+    public static DbHelper getInstance(Context context) {
+        DbHelper localInstance = sInstance;
         if (localInstance == null) {
-            synchronized (DbUtils.class) {
+            synchronized (DbHelper.class) {
                 localInstance = sInstance;
                 if (localInstance == null) {
-                    sInstance = localInstance = new DbUtils();
+                    sInstance = localInstance = new DbHelper();
                     localInstance.setDBContext(context, "sample.sqlite", 1);
                 }
             }
