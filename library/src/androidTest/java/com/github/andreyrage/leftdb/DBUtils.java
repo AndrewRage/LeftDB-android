@@ -7,6 +7,8 @@ import com.github.andreyrage.leftdb.entities.AllFields;
 import com.github.andreyrage.leftdb.entities.AnnotationId;
 import com.github.andreyrage.leftdb.entities.ChildMany;
 import com.github.andreyrage.leftdb.entities.ChildOne;
+import com.github.andreyrage.leftdb.entities.FloatKey;
+import com.github.andreyrage.leftdb.entities.FloatKeyChild;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
 import com.github.andreyrage.leftdb.entities.StringKeyChild;
 import com.github.andreyrage.leftdb.entities.StringKey;
@@ -43,7 +45,9 @@ public class DBUtils extends LeftDBUtils {
 				NotAnnotationId.class,
 				PrimaryKeyId.class,
 				StringKey.class,
-				StringKeyChild.class
+				StringKeyChild.class,
+				FloatKey.class,
+				FloatKeyChild.class
 		));
 	}
 

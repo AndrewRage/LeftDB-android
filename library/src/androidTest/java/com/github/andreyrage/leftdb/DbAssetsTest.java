@@ -7,6 +7,8 @@ import com.github.andreyrage.leftdb.entities.AllFields;
 import com.github.andreyrage.leftdb.entities.AnnotationId;
 import com.github.andreyrage.leftdb.entities.ChildMany;
 import com.github.andreyrage.leftdb.entities.ChildOne;
+import com.github.andreyrage.leftdb.entities.FloatKey;
+import com.github.andreyrage.leftdb.entities.FloatKeyChild;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
 import com.github.andreyrage.leftdb.entities.StringKeyChild;
 import com.github.andreyrage.leftdb.entities.StringKey;
@@ -475,7 +477,7 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals("child5", dbList.get(1).getChilds().get(2).getName());
 	}
 
-	public void testOneToOneNotLonkKey() throws Exception {
+	public void testOneToOneStringKey() throws Exception {
 		StringKey parent1 = new StringKey("key1", "parent1", new StringKeyChild("child1"));
 		StringKey parent2 = new StringKey("key2", "parent2", new StringKeyChild("child2"));
 		StringKey parent3 = new StringKey(null, "parent2", new StringKeyChild("child3"));
@@ -491,6 +493,24 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals("child1", dbList.get(0).getStringKeyChild().getName());
 		assertEquals("child2", dbList.get(1).getStringKeyChild().getName());
 		assertEquals("child3", dbList.get(2).getStringKeyChild().getName());
+	}
+
+	public void testOneToOneFloatKey() throws Exception {
+		FloatKey parent1 = new FloatKey(3.4f, "parent1", new FloatKeyChild("child1"));
+		FloatKey parent2 = new FloatKey(697.0f, "parent2", new FloatKeyChild("child2"));
+		FloatKey parent3 = new FloatKey(null, "parent2", new FloatKeyChild("child3"));
+		List<FloatKey> list = new ArrayList<>();
+		list.add(parent1);
+		list.add(parent2);
+		list.add(parent3);
+
+		dbUtils.add(list);
+		List<FloatKey> dbList = dbUtils.getAll(FloatKey.class);
+
+		assertEquals(3, dbList.size());
+		assertEquals("child1", dbList.get(0).getFloatKeyChild().getName());
+		assertEquals("child2", dbList.get(1).getFloatKeyChild().getName());
+		assertEquals("child3", dbList.get(2).getFloatKeyChild().getName());
 	}
 
 	public void testSelect() throws Exception {
