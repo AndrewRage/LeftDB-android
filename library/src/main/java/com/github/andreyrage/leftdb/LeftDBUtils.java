@@ -78,6 +78,10 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * Called for the first time if the file does not exist in assets and need
      * to create a database. This is where the creation of tables and the initial
      * population of the tables should happen.
+     * You can use:
+     * - {@link #createTable(SQLiteDatabase, Class)}
+     * - {@link #createTables(SQLiteDatabase, List)}
+     * for change database.
      *
      * @param db The database.
      */
@@ -90,6 +94,11 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * Called when the database needs to be upgraded. The implementation
      * should use this method to drop tables, add tables, or do anything else it
      * needs to upgrade to the new schema version.
+     * You can use:
+     * - {@link #createTable(SQLiteDatabase, Class)}
+     * - {@link #createTables(SQLiteDatabase, List)}
+     * - {@link #upgradeRows(SQLiteDatabase)}
+     * for change database.
      *
      * @param db The database.
      * @param oldVersion The old database version.
@@ -103,9 +112,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     /**
      * Called when the database needs to be downgraded. This is strictly similar to
      * {@link #onUpgrade} method, but is called whenever current version is newer than requested one.
-     * However, this method is not abstract, so it is not mandatory for a customer to
-     * implement it. If not overridden, default implementation will reject downgrade and
-     * throws SQLiteException
+     * You can use:
+     * - {@link #createTable(SQLiteDatabase, Class)}
+     * - {@link #createTables(SQLiteDatabase, List)}
+     * - {@link #deleteTable(SQLiteDatabase, Class)}
+     * - {@link #deleteTables(SQLiteDatabase, List)}
+     * for change database.
      *
      * @param db The database.
      * @param oldVersion The old database version.
@@ -892,11 +904,11 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @param db The database.
      * @param type The class of object that need to create
      * */
-    public void createTable(@NonNull SQLiteDatabase db, @NonNull Class<?> type){
+    protected void createTable(@NonNull SQLiteDatabase db, @NonNull Class<?> type){
         db.execSQL(createTableSQL(type));
     }
 
-    private String createTableSQL(@NonNull Class<?> type) throws IllegalArgumentException {
+    protected String createTableSQL(@NonNull Class<?> type) throws IllegalArgumentException {
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("CREATE TABLE ");
         sqlBuilder.append(getTableName(type));
@@ -1009,7 +1021,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @param db The database.
      * @param elements The list of the classes of objects that need to delete
      * */
-    public void deleteTables(@NonNull SQLiteDatabase db, @NonNull List<Class<?>> elements) {
+    protected void deleteTables(@NonNull SQLiteDatabase db, @NonNull List<Class<?>> elements) {
         for (Class<?> element : elements) {
             deleteTable(db, element);
         }
@@ -1021,7 +1033,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @param db The database.
      * @param type The class of object that need to delete
      * */
-    public void deleteTable(@NonNull SQLiteDatabase db, @NonNull Class<?> type) {
+    protected void deleteTable(@NonNull SQLiteDatabase db, @NonNull Class<?> type) {
         db.execSQL(deleteTableSQL(type));
     }
 
@@ -1044,5 +1056,61 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         int count = cursor.getInt(0);
         cursor.close();
         return count > 0;
+    }
+
+    /**
+     * Copy all rows from assets database to app database
+     *
+     * @param db The database.
+     *
+     * @return the number of copied rows OR -1 if any error
+     * */
+    protected int upgradeRows(SQLiteDatabase db) {
+        int count = 0;
+
+        if (dbHandler == null) {
+            return 0;
+        }
+        LeftDBHandler tempDBHandler = new LeftDBHandler(dbHandler.getContext(), dbHandler.getName(), dbHandler.getVersion(), true);
+        SQLiteDatabase tempDb = tempDBHandler.getWritableDatabase();
+        List<String> tablesNames = new ArrayList<>();
+        Cursor nameCursor = tempDb.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
+        if (nameCursor.moveToFirst()) {
+            while (!nameCursor.isAfterLast()) {
+                tablesNames.add(nameCursor.getString(nameCursor.getColumnIndex("name")));
+                nameCursor.moveToNext();
+            }
+        }
+        nameCursor.close();
+
+        try {
+            for (String tableName : tablesNames) {
+                if (!tableName.equals("sqlite_sequence")) {
+                    Cursor queryCursor = tempDb.query(tableName, null, null, null, null, null, null);
+                    if (queryCursor.moveToFirst()) {
+                        while (!queryCursor.isAfterLast()) {
+                            ContentValues values = new ContentValues();
+                            for (String columnName : queryCursor.getColumnNames()) {
+                                int columnId = queryCursor.getColumnIndex(columnName);
+                                values.put(columnName, queryCursor.getString(columnId));
+                            }
+                            long row = db.insertWithOnConflict(tableName, null,
+                                    values, SQLiteDatabase.CONFLICT_REPLACE);
+                            if (row >= 0) {
+                                count++;
+                            }
+                            queryCursor.moveToNext();
+                        }
+                    }
+                    queryCursor.close();
+                }
+            }
+        } catch (Exception e) {
+            count = -1;
+        }
+
+        tempDBHandler.deleteDataBase();
+
+        return count;
     }
 }

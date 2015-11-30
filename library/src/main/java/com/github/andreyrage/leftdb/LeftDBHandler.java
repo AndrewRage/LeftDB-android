@@ -24,6 +24,7 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 	private int version;
 
 	private OnDbChangeCallback mCallback;
+	private boolean isTemp;
 
 	/**
 	 * Rightutils compatibility
@@ -40,6 +41,32 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	protected LeftDBHandler(@NonNull Context context, @NonNull String name, int version, boolean tempDb) {
+		super(context, name, null, version);
+		this.context = context;
+		this.name = name;
+		this.path = context.getFilesDir() + "/databases/";
+		this.version = version;
+		this.isTemp = tempDb;
+		try {
+			createOrCopyDataBaseFromAssets();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public Context getContext() {
+		return context;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public int getVersion() {
+		return version;
 	}
 
 	private void createOrCopyDataBaseFromAssets() throws IOException {
@@ -60,7 +87,7 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 	public void deleteDataBase() {
 		if (checkDataBase()) {
 			close();
-			File dbFile = new File(path + name);
+			File dbFile = new File(path + getDbFileName());
 			dbFile.delete();
 		}
 	}
@@ -70,7 +97,7 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 	}
 
 	protected boolean checkDataBase() {
-		File dbFile = new File(path + name);
+		File dbFile = new File(path + getDbFileName());
 		return dbFile.exists();
 	}
 
@@ -101,17 +128,27 @@ public class LeftDBHandler extends SQLiteOpenHelper {
 	private File getDbFile() {
 		final File dir = new File(path);
 		dir.mkdirs();
-		return new File(dir, name);
+		return new File(dir, getDbFileName());
+	}
+
+	private String getDbFileName() {
+		if (isTemp) {
+			return String.format("LeftDbTemp_v%d_%s", version, this.name);
+		} else {
+			return name;
+		}
 	}
 
 	/**
 	 * Rightutils compatibility
 	 * */
 	public SQLiteDatabase openDataBase(int openType) throws SQLException {
-		String myPath = path + name;
+		String myPath = path + getDbFileName();
 		dataBase = SQLiteDatabase.openDatabase(myPath, null, openType);
 		dataBase.execSQL("PRAGMA foreign_keys=ON;");
-		validateVersion(dataBase);
+		if (!isTemp) {
+			validateVersion(dataBase);
+		}
 		return dataBase;
 	}
 
