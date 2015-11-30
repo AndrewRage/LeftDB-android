@@ -880,6 +880,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return id != null ? id : possibleId != null ? possibleId : possibleRealId;
     }
 
+    /**
+     * Rightutils compatibility
+     * */
     public LeftDBHandler getDbHandler() {
         return dbHandler;
     }
