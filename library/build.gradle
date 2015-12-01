@@ -28,6 +28,7 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:support-annotations:23.1.1'
     androidTestCompile 'org.codehaus.jackson:jackson-core-asl:1.9.13'
     androidTestCompile 'org.codehaus.jackson:jackson-mapper-asl:1.9.13'
     androidTestCompile 'com.google.code.gson:gson:2.4'

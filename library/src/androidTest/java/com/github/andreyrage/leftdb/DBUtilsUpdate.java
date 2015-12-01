@@ -3,19 +3,18 @@ package com.github.andreyrage.leftdb;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.github.andreyrage.leftdb.entities.AllFields;
-import com.github.andreyrage.leftdb.entities.ChildMany;
-import com.github.andreyrage.leftdb.entities.ChildOne;
+import com.github.andreyrage.leftdb.entities.SerializableObject;
 import com.github.andreyrage.leftdb.utils.SerializeUtils;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 
-public class DBUtilsMigration extends LeftDBUtils {
+public class DBUtilsUpdate extends LeftDBUtils {
 
-	public static DBUtilsMigration newInstance(Context context, String name, int version) {
-		DBUtilsMigration dbUtils = new DBUtilsMigration();
+	public static DBUtilsUpdate newInstance(Context context, String name, int version) {
+		DBUtilsUpdate dbUtils = new DBUtilsUpdate();
 		dbUtils.setDBContext(context, name, version);
 		return dbUtils;
 	}
@@ -23,32 +22,20 @@ public class DBUtilsMigration extends LeftDBUtils {
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		super.onCreate(db);
-		createTable(db, AllFields.class);
+		createTable(db, SerializableObject.class);
 	}
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-		super.onUpgrade(db, oldVersion, newVersion);
-		if (oldVersion == 1 && newVersion > 1) {
-			createTable(db, ChildOne.class);
-			oldVersion = 2;
-		}
-		if (oldVersion == 2 && newVersion > 2) {
-			createTable(db, ChildMany.class);
-			oldVersion = 3;
-		}
-	}
-
-	@Override
-	public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 		super.onDowngrade(db, oldVersion, newVersion);
-		if (oldVersion == 3 && newVersion < 3) {
-			deleteTable(db, ChildMany.class);
-			oldVersion = 2;
-		}
-		if (oldVersion == 2 && newVersion < 2) {
-			deleteTables(db, Arrays.asList(ChildMany.class, ChildOne.class));
-			oldVersion = 1;
+		LeftDBHandler dbHandler = getDbHandler();
+		try {
+			Field field = dbHandler.getClass().getDeclaredField("name");
+			field.setAccessible(true);
+			field.set(dbHandler, "update2.sqlite");
+			upgradeRows(db);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
