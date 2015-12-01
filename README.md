@@ -78,4 +78,19 @@ dbHelper.delete(simpleEntity); //delete object from database
 
 ```
 
-For more information, see [example](https://github.com/AndreyRage/LeftDB-android/tree/master/sample).
+To execute in not UI thread you can use AsyncCall:
+``` java
+AsyncCall.make(new AsyncCall.Call<List<SimpleEntity>>() {
+    @Override
+    public List<SimpleEntity> call() {
+        return dbHelper.getAll(SimpleEntity.class)
+    }
+}, new AsyncCall.Do<List<SimpleEntity>>() {
+    @Override
+    public void doNext(List<SimpleEntity> simpleEntities) {
+        // returned result to UI thread
+    }
+}).call();
+```
+
+For more information, see [example](https://github.com/AndreyRage/LeftDB-android/tree/master/sample) or [documentation](https://github.com/AndreyRage/LeftDB-android/wiki/Documentation).
