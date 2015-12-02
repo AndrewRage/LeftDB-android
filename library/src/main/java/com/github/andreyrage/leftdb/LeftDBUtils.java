@@ -284,17 +284,14 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      *
      * Rightutils compatibility
      * */
+    @Deprecated
     public int countResultsByQuery(@NonNull String query) {
-        return countResultsByCursor(db.rawQuery(query, null));
-    }
-
-    private int countResultsByCursor(@Nullable Cursor cursor) {
-        int count = 0;
-        if (cursor != null && !cursor.isClosed() && cursor.moveToFirst()) {
-            count = cursor.getCount();
-            cursor.close();
+        Cursor cursor = db.rawQuery(query, null);
+        if (cursor.moveToFirst()) {
+            return cursor.getCount();
         }
-        return count;
+        cursor.close();
+        return 0;
     }
 
     /**
@@ -305,7 +302,36 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @return count or rows
      * */
     public int count(@NonNull SelectQuery query) {
-        return countResultsByCursor(byQuery(query));
+        return count(
+                query.entity(),
+                query.where(),
+                query.whereArgs() != null ? query.whereArgs().toArray(new String[query.whereArgs().size()]) : null
+        );
+    }
+
+    /**
+     * Method that return count of rows
+     *
+     * @param type the class of table
+     * @param where the where query
+     * @param selectionArgs You may include ?s in where clause in the query,
+     *     which will be replaced by the values from selectionArgs. The
+     *     values will be bound as Strings.
+     *
+     * @return count of rows
+     * */
+    public <T> int count(@NonNull Class<T> type, @Nullable String where, @Nullable String[] selectionArgs) {
+        Cursor cursor= db.rawQuery(String.format("SELECT COUNT (*) FROM %s", getTableName(type))
+                + (TextUtils.isEmpty(where) ? "" : " WHERE " + where), selectionArgs);
+        int count = 0;
+        if (null != cursor) {
+            if (cursor.getCount() > 0) {
+                cursor.moveToFirst();
+                count = cursor.getInt(0);
+            }
+            cursor.close();
+        }
+        return count;
     }
 
     /**
@@ -317,8 +343,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @return count of rows
      * */
     public <T> int count(@NonNull Class<T> type, @Nullable String where) {
-        return countResultsByQuery(String.format("SELECT * FROM %s", getTableName(type))
-                + (TextUtils.isEmpty(where) ? "" : " WHERE " + where));
+        return count(type, where, null);
     }
 
     /**
@@ -329,7 +354,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @return count of rows
      * */
     public <T> int count(@NonNull Class<T> type) {
-        return count(type, null);
+        return count(type, null, null);
     }
 
     /**
