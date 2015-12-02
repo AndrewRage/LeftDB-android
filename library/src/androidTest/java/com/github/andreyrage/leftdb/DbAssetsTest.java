@@ -16,6 +16,7 @@ import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.PrimaryKeyId;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
+import com.github.andreyrage.leftdb.queries.CountQuery;
 import com.github.andreyrage.leftdb.queries.DeleteQuery;
 import com.github.andreyrage.leftdb.queries.SelectQuery;
 import com.github.andreyrage.leftdb.queries.UpdateQuery;
@@ -549,6 +550,8 @@ public class DbAssetsTest extends AndroidTestCase {
 
 		dbUtils.add(list);
 
+		// SelectQuery
+
 		int count = dbUtils.count(SelectQuery.builder()
 				.entity(SerializableObject.class)
 				.build()
@@ -576,6 +579,36 @@ public class DbAssetsTest extends AndroidTestCase {
 				.build()
 		);
 		assertEquals(2, count);
+
+		// CountQuery
+
+		count = dbUtils.count(CountQuery.builder()
+				.table(SerializableObject.class)
+				.build()
+		);
+		assertEquals(10, count);
+
+		count = dbUtils.count(CountQuery.builder()
+				.table(SerializableObject.class)
+				.where("id > 102")
+				.build()
+		);
+		assertEquals(7, count);
+
+		count = dbUtils.count(CountQuery.builder()
+				.table(SerializableObject.class)
+				.where(null)
+				.build()
+		);
+		assertEquals(10, count);
+
+		count = dbUtils.count(CountQuery.builder()
+				.table(SerializableObject.class)
+				.where("id > ?")
+				.whereArgs("102")
+				.build()
+		);
+		assertEquals(7, count);
 	}
 
 	public void testDelete() throws Exception {

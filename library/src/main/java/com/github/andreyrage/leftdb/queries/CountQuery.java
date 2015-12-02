@@ -11,14 +11,14 @@ import static com.github.andreyrage.leftdb.utils.CheckNullUtils.checkNotNull;
 import static com.github.andreyrage.leftdb.utils.CheckNullUtils.nonNullString;
 import static com.github.andreyrage.leftdb.utils.CheckNullUtils.unmodifiableListOfStrings;
 
-public final class UpdateQuery {
+public final class CountQuery {
 
 	@NonNull private final Class<?> entity;
 	@NonNull private final String where;
 	@NonNull private final List<String> whereArgs;
 
-	private UpdateQuery(@NonNull Class<?> entity, @NonNull String where,
-						@NonNull List<String> whereArgs) {
+	private CountQuery(@NonNull Class<?> entity, @NonNull String where,
+					   @NonNull List<String> whereArgs) {
 		this.entity = entity;
 		this.where = where;
 		this.whereArgs = whereArgs;
@@ -52,7 +52,7 @@ public final class UpdateQuery {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 
-		UpdateQuery that = (UpdateQuery) o;
+		CountQuery that = (CountQuery) o;
 
 		return entity.equals(that.entity)
 				&& where.equals(that.where)
@@ -101,7 +101,7 @@ public final class UpdateQuery {
 
 		@NonNull
 		public Builder where(@Nullable String where) {
-			this.where = where;
+			this.where = nonNullString(where);
 			return this;
 		}
 
@@ -112,12 +112,12 @@ public final class UpdateQuery {
 		}
 
 		@NonNull
-		public UpdateQuery build() {
+		public CountQuery build() {
 			if (where == null && whereArgs != null && whereArgs.length > 0) {
 				throw new IllegalStateException("You can not use whereArgs without where clause");
 			}
 
-			return new UpdateQuery(
+			return new CountQuery(
 					entity,
 					nonNullString(where),
 					unmodifiableListOfStrings(whereArgs)

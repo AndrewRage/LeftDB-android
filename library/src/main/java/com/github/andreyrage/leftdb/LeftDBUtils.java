@@ -20,6 +20,7 @@ import com.github.andreyrage.leftdb.annotation.ColumnIgnore;
 import com.github.andreyrage.leftdb.annotation.ColumnName;
 import com.github.andreyrage.leftdb.annotation.ColumnPrimaryKey;
 import com.github.andreyrage.leftdb.annotation.TableName;
+import com.github.andreyrage.leftdb.queries.CountQuery;
 import com.github.andreyrage.leftdb.queries.DeleteQuery;
 import com.github.andreyrage.leftdb.queries.SelectQuery;
 import com.github.andreyrage.leftdb.queries.UpdateQuery;
@@ -300,6 +301,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      *
      * @return count or rows
      * */
+    @Deprecated
     public int count(@NonNull SelectQuery query) {
         if (!TextUtils.isEmpty(query.groupBy()) || !TextUtils.isEmpty(query.having())
                 || !TextUtils.isEmpty(query.orderBy()) || !TextUtils.isEmpty(query.limit())) {
@@ -314,7 +316,22 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return count(
                 query.entity(),
                 query.where(),
-                query.whereArgs() != null ? query.whereArgs().toArray(new String[query.whereArgs().size()]) : null
+                query.whereArgs().toArray(new String[query.whereArgs().size()])
+        );
+    }
+
+    /**
+     * Get number of the records with query builder
+     *
+     * @param query {@link SelectQuery}
+     *
+     * @return count or rows
+     * */
+    public int count(@NonNull CountQuery query) {
+        return count(
+                query.entity(),
+                query.where(),
+                query.whereArgs().toArray(new String[query.whereArgs().size()])
         );
     }
 
