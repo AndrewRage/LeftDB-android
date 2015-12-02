@@ -534,6 +534,35 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertNotSame(object2, dbList.get(0));
 	}
 
+	public void testCount() throws Exception {
+		List<SerializableObject> list = new ArrayList<>();
+		list.add(new SerializableObject(100, "name1", null));
+		list.add(new SerializableObject(101, "name2", null));
+		list.add(new SerializableObject(102, "name2", null));
+		list.add(new SerializableObject(103, "name2", null));
+		list.add(new SerializableObject(104, "name4", null));
+		list.add(new SerializableObject(105, "name4", null));
+		list.add(new SerializableObject(106, "name4", null));
+		list.add(new SerializableObject(107, "name4", null));
+		list.add(new SerializableObject(108, "name4", null));
+		list.add(new SerializableObject(109, "name4", null));
+
+		dbUtils.add(list);
+
+		int count = dbUtils.count(SelectQuery.builder()
+				.entity(SerializableObject.class)
+				.build()
+		);
+		assertEquals(10, count);
+
+		count = dbUtils.count(SelectQuery.builder()
+				.entity(SerializableObject.class)
+				.where("id > 102")
+				.build()
+		);
+		assertEquals(7, count);
+	}
+
 	public void testDelete() throws Exception {
 		SerializableObject object1 = new SerializableObject(100, "simple name", null);
 		SerializableObject object2 = new SerializableObject(101, "simple name", null);
