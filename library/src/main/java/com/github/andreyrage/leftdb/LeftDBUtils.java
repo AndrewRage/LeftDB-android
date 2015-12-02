@@ -57,13 +57,13 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     /**
      * Initialize DBHandler
      *
-     * @param context to use to open or create the database
-     * @param name of the database file; if the file exists in the directory it will be
-     *             copied, or if the file does not exist {@link #onCreate} will be used
+     * @param context is using for opening or creating database
+     * @param name of the database file; if file existed in the folder it will be
+     *             copied then, otherwise {@link #onCreate} will be used
      *             to create database
-     * @param version number of the database (starting at 1); if the database is older,
-     *     {@link #onUpgrade} will be used to upgrade the database; if the database is
-     *     newer, {@link #onDowngrade} will be used to downgrade the database
+     * @param version number of the database (starting at 1); if version is lover,
+     *     {@link #onUpgrade} will be used to upgrade the database; if version is
+     *     higher, {@link #onDowngrade} will be used to downgrade the database
      *
      * Rightutils compatibility
      * */
@@ -75,13 +75,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Called for the first time if the file does not exist in assets and need
-     * to create a database. This is where the creation of tables and the initial
-     * population of the tables should happen.
+     * If database file does not exist in assets folder this function will be called.
+     * Here you have to create all table you need and fill them with default data
      * You can use:
      * - {@link #createTable(SQLiteDatabase, Class)}
      * - {@link #createTables(SQLiteDatabase, List)}
-     * for change database.
+     * to change database
      *
      * @param db The database.
      */
@@ -91,14 +90,13 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Called when the database needs to be upgraded. The implementation
-     * should use this method to drop tables, add tables, or do anything else it
-     * needs to upgrade to the new schema version.
+     * Called when the database needs to be upgraded.
+     * Do whatever you want here to update the database
      * You can use:
      * - {@link #createTable(SQLiteDatabase, Class)}
      * - {@link #createTables(SQLiteDatabase, List)}
      * - {@link #upgradeRows(SQLiteDatabase)}
-     * for change database.
+     * to change database.
      *
      * @param db The database.
      * @param oldVersion The old database version.
@@ -110,14 +108,14 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Called when the database needs to be downgraded. This is strictly similar to
-     * {@link #onUpgrade} method, but is called whenever current version is newer than requested one.
+     * Called when the database needs to be downgraded. This is like
+     * {@link #onUpgrade} method, but it works in opposite way.
      * You can use:
      * - {@link #createTable(SQLiteDatabase, Class)}
      * - {@link #createTables(SQLiteDatabase, List)}
      * - {@link #deleteTable(SQLiteDatabase, Class)}
      * - {@link #deleteTables(SQLiteDatabase, List)}
-     * for change database.
+     * to change database.
      *
      * @param db The database.
      * @param oldVersion The old database version.
@@ -129,9 +127,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Called when need serialize object to string
+     * Needs for serialization of the object to string
      *
-     * @param object the object that need serialize.
+     * @param object the object that should to be serialized.
      *
      * @return string of serialized object
      *
@@ -139,25 +137,24 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     protected abstract String serializeObject(Object object);
 
     /**
-     * Called when need deserialize string to object
+     * Needs for deserialization from string to object
      *
-     * @param string the string that need deserialize.
-     * @param tClass the class of object that need deserialize
-     * @param genericType the generic type of object that need deserialize
+     * @param string serialized object.
+     * @param tClass the class of the serialized object
+     * @param genericType the generic type of the serialized object
      *
-     * @return the object that was deserialize
+     * @return the object
      *
      * */
     protected abstract <T> T deserializeObject(String string, Class<T> tClass, Type genericType);
 
     /**
-     * Convenience method for deleting rows in the database.
+     * To remove records with conditions
      *
-     * @param type the class of table to delete
-     * @param where the optional WHERE clause to apply when deleting.
-     *            Passing null will delete all rows.
+     * @param type of the class that contains table name
+     * @param where sqLite condition
      *
-     * @return the number of deletes rows
+     * @return the number of deleted rows
      *
      * Rightutils compatibility
      * */
@@ -166,11 +163,11 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Convenience method for deleting all table rows in the database.
+     * To remove all records in the table
      *
-     * @param type the class of table to delete
+     * @param type of the class that contains table name
      *
-     * @return the number of deletes rows
+     * @return the number of deleted rows
      *
      * Rightutils compatibility
      * */
@@ -179,13 +176,13 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Convenience method for deleting rows in the database.
+     * To remove records with params
      *
-     * @param type the class of table to delete
+     * @param type of the class that contains table name
      * @param columnId the column name
-     * @param ids values of column row that need to delete
+     * @param ids values of the fields of the records we need to remove
      *
-     * @return the number of deletes rows
+     * @return the number of deleted rows
      *
      * Rightutils compatibility
      * */
@@ -194,11 +191,11 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method for deleting row in the database.
+     * To remove a row in table
      *
-     * @param o the object that need to delete
+     * @param o the object that needs to be deleted
      *
-     * @return return true if row is deletes
+     * @return true if row was deleted
      * */
     public boolean delete(@NonNull Object o) {
         String idFieldName = getIdFieldName(o.getClass());
@@ -222,11 +219,11 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method for deleting rows in the database.
+     * To remove collection of the rows
      *
-     * @param collection the collection of similar objects that need to delete
+     * @param collection of objects that need to be deleted
      *
-     * @return @return the number of deletes rows
+     * @return @return the number of deleted rows
      * */
     public <T extends Collection<?>> int delete(@NonNull T collection) {
         if (collection.size() == 0) {
@@ -265,7 +262,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method for deleting rows in the database.
+     * To remove with query builder
      *
      * @param query {@link DeleteQuery}
      *
@@ -276,7 +273,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method that return count of rows
+     * Get number of the records with sql query
      *
      * @param query the SQL query
      *
@@ -298,7 +295,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method that return count of rows
+     * Get number of the records with query builder
      *
      * @param query {@link SelectQuery}
      *
@@ -322,7 +319,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method that return count of rows
+     * Method that return count of rows in the table
      *
      * @param type the class of table
      *
@@ -333,7 +330,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Get list of objects from database
+     * Get a list of the objects from database with sql query
      *
      * @param query the SQL query
      * @param type the class to which you want to map result
@@ -348,7 +345,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Get list of objects from database
+     * Get a list of the objects from database
      *
      * @param query {@link SelectQuery}
      *
