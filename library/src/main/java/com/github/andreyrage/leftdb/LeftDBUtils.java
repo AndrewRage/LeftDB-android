@@ -285,11 +285,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     @Deprecated
     public int countResultsByQuery(@NonNull String query) {
         Cursor cursor = db.rawQuery(query, null);
+        int count = 0;
         if (cursor.moveToFirst()) {
-            return cursor.getCount();
+            count = cursor.getCount();
         }
         cursor.close();
-        return 0;
+        return count;
     }
 
     /**
@@ -300,6 +301,16 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @return count or rows
      * */
     public int count(@NonNull SelectQuery query) {
+        if (!TextUtils.isEmpty(query.groupBy()) || !TextUtils.isEmpty(query.having())
+                || !TextUtils.isEmpty(query.orderBy()) || !TextUtils.isEmpty(query.limit())) {
+            Cursor cursor = byQuery(query);
+            int count = 0;
+            if (cursor.moveToFirst()) {
+                count = cursor.getCount();
+            }
+            cursor.close();
+            return count;
+        }
         return count(
                 query.entity(),
                 query.where(),

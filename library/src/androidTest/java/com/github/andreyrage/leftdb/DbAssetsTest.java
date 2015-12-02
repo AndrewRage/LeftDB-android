@@ -561,6 +561,21 @@ public class DbAssetsTest extends AndroidTestCase {
 				.build()
 		);
 		assertEquals(7, count);
+
+		count = dbUtils.count(SelectQuery.builder()
+				.entity(SerializableObject.class)
+				.limit(5)
+				.build()
+		);
+		assertEquals(5, count);
+
+		count = dbUtils.count(SelectQuery.builder()
+				.entity(SerializableObject.class)
+				.groupBy("otherName")
+				.having("count(otherName) < 5")
+				.build()
+		);
+		assertEquals(2, count);
 	}
 
 	public void testDelete() throws Exception {
