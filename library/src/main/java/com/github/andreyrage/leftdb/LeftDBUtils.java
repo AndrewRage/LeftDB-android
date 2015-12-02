@@ -1,5 +1,6 @@
 package com.github.andreyrage.leftdb;
 
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -306,7 +307,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method that return count of rows
+     * Get number of the records with sql conditions
      *
      * @param type the class of table
      * @param where the where query
@@ -319,7 +320,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method that return count of rows in the table
+     * Get total number rows in the table with type
      *
      * @param type the class of table
      *
@@ -330,7 +331,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Get a list of the objects from database with sql query
+     * Execute sql query and map results to the type you need
      *
      * @param query the SQL query
      * @param type the class to which you want to map result
@@ -345,7 +346,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Get a list of the objects from database
+     * Map results to the list with {@link SelectQuery}
      *
      * @param query {@link SelectQuery}
      *
@@ -364,9 +365,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Get list of objects from database
+     * Retrieve everything from the table
      *
-     * @param type the class of table
+     * @param type the class of the table
      *
      * @return list of mapped objects
      *
@@ -379,10 +380,10 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Get list of objects from database
+     * Retrieve from the table with limit
      *
-     * @param type the class of table
-     * @param limit the limit the data amount
+     * @param type the class of the table
+     * @param limit maximum amount of rows to retrive
      *
      * @return list of mapped objects
      *
@@ -395,10 +396,10 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Get list of objects from database
+     * Retrieve from the table with condition
      *
-     * @param where the where query
-     * @param type the class of table
+     * @param where sql condition
+     * @param type the class of the table
      *
      * @return list of mapped objects
      *
@@ -411,12 +412,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method for add rows in the database.
+     * To add collection with optional transaction
      *
-     * @param elements the list of object that need to add in the database
-     * @param useTransaction is need use transaction?
+     * @param elements the list of object that need to be added to the database
+     * @param useTransaction enables transaction
      *
-     * @return the number of added rows OR -1 if any error
+     * @return number of added rows (if error occurred -1)
      * */
     public <T> int add(@NonNull List<T> elements, boolean useTransaction) {
         int count = 0;
@@ -452,11 +453,11 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method for add rows in the database.
+     * To add collection with transaction
      *
-     * @param elements the list of object that need to add in the database
+     * @param elements the list of object that need to be added to the database
      *
-     * @return the number of added rows OR -1 if any error
+     * @return number of added rows (if error occurred -1)
      *
      * Rightutils compatibility
      * */
@@ -465,11 +466,11 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
-     * Method for add row in the database.
+     * To add a row
      *
-     * @param element the object that need to add in the database
+     * @param element the object that needs to be added to the database
      *
-     * @return the row ID of the newly inserted row
+     * @return id of the new row
      *
      * Rightutils compatibility
      * */
@@ -544,8 +545,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * Method for updating rows in the database.
      *
      * @param query {@link UpdateQuery}
-     * @param values a map from column names to new column values. null is a
-     *            valid value that will be translated to NULL.
+     * @param values is used to store a set of values that the {@link ContentResolver}
+     * can process.
      *
      * @return the row ID of the newly inserted row
      * */
