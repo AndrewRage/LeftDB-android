@@ -35,7 +35,8 @@ public final class DeleteQuery {
 		return entity.getSimpleName();
 	}
 
-	@NonNull Class<?> entity() {
+	@NonNull
+	public Class<?> entity() {
 		return entity;
 	}
 
@@ -89,40 +90,41 @@ public final class DeleteQuery {
 
 		private String where;
 
-		private List<String> whereArgs;
+		private Object[] whereArgs;
 
 		Builder() {
 		}
 
 		@NonNull
 		public Builder entity(@NonNull Class<?> entity) {
-			checkNotNull(entity, "Table name is null or empty");
 			this.entity = entity;
 			return this;
 		}
 
 		@NonNull
 		public Builder where(@Nullable String where) {
-			this.where = nonNullString(where);
+			this.where = where;
 			return this;
 		}
 
 		@NonNull
 		public Builder whereArgs(@Nullable Object... whereArgs) {
-			this.whereArgs = unmodifiableListOfStrings(whereArgs);
+			this.whereArgs = whereArgs;
 			return this;
 		}
 
 		@NonNull
 		public DeleteQuery build() {
-			if (where == null && whereArgs != null && !whereArgs.isEmpty()) {
+			checkNotNull(entity, "Table name is null or empty");
+
+			if (where == null && whereArgs != null && whereArgs.length > 0) {
 				throw new IllegalStateException("You can not use whereArgs without where clause");
 			}
 
 			return new DeleteQuery(
 					entity,
-					where,
-					whereArgs
+					nonNullString(where),
+					unmodifiableListOfStrings(whereArgs)
 			);
 		}
 

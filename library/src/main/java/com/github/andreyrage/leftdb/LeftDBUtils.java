@@ -20,6 +20,7 @@ import com.github.andreyrage.leftdb.annotation.ColumnIgnore;
 import com.github.andreyrage.leftdb.annotation.ColumnName;
 import com.github.andreyrage.leftdb.annotation.ColumnPrimaryKey;
 import com.github.andreyrage.leftdb.annotation.TableName;
+import com.github.andreyrage.leftdb.queries.CountQuery;
 import com.github.andreyrage.leftdb.queries.DeleteQuery;
 import com.github.andreyrage.leftdb.queries.SelectQuery;
 import com.github.andreyrage.leftdb.queries.UpdateQuery;
@@ -282,16 +283,14 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      *
      * Rightutils compatibility
      * */
+    @Deprecated
     public int countResultsByQuery(@NonNull String query) {
-        return countResultsByCursor(db.rawQuery(query, null));
-    }
-
-    private int countResultsByCursor(@Nullable Cursor cursor) {
+        Cursor cursor = db.rawQuery(query, null);
         int count = 0;
-        if (cursor != null && !cursor.isClosed() && cursor.moveToFirst()) {
+        if (cursor.moveToFirst()) {
             count = cursor.getCount();
-            cursor.close();
         }
+        cursor.close();
         return count;
     }
 
@@ -302,8 +301,63 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      *
      * @return count or rows
      * */
+    @Deprecated
     public int count(@NonNull SelectQuery query) {
-        return countResultsByCursor(byQuery(query));
+        if (!TextUtils.isEmpty(query.groupBy()) || !TextUtils.isEmpty(query.having())
+                || !TextUtils.isEmpty(query.orderBy()) || !TextUtils.isEmpty(query.limit())) {
+            Cursor cursor = byQuery(query);
+            int count = 0;
+            if (cursor.moveToFirst()) {
+                count = cursor.getCount();
+            }
+            cursor.close();
+            return count;
+        }
+        return count(
+                query.entity(),
+                query.where(),
+                query.whereArgs().toArray(new String[query.whereArgs().size()])
+        );
+    }
+
+    /**
+     * Get number of the records with query builder
+     *
+     * @param query {@link SelectQuery}
+     *
+     * @return count or rows
+     * */
+    public int count(@NonNull CountQuery query) {
+        return count(
+                query.entity(),
+                query.where(),
+                query.whereArgs().toArray(new String[query.whereArgs().size()])
+        );
+    }
+
+    /**
+     * Method that return count of rows
+     *
+     * @param type the class of table
+     * @param where the where query
+     * @param selectionArgs You may include ?s in where clause in the query,
+     *     which will be replaced by the values from selectionArgs. The
+     *     values will be bound as Strings.
+     *
+     * @return count of rows
+     * */
+    public <T> int count(@NonNull Class<T> type, @Nullable String where, @Nullable String[] selectionArgs) {
+        Cursor cursor= db.rawQuery(String.format("SELECT COUNT (*) FROM %s", getTableName(type))
+                + (TextUtils.isEmpty(where) ? "" : " WHERE " + where), selectionArgs);
+        int count = 0;
+        if (null != cursor) {
+            if (cursor.getCount() > 0) {
+                cursor.moveToFirst();
+                count = cursor.getInt(0);
+            }
+            cursor.close();
+        }
+        return count;
     }
 
     /**
@@ -315,8 +369,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @return count of rows
      * */
     public <T> int count(@NonNull Class<T> type, @Nullable String where) {
-        return countResultsByQuery(String.format("SELECT * FROM %s", getTableName(type))
-                + (TextUtils.isEmpty(where) ? "" : " WHERE " + where));
+        return count(type, where, null);
     }
 
     /**
@@ -327,7 +380,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @return count of rows
      * */
     public <T> int count(@NonNull Class<T> type) {
-        return count(type, null);
+        return count(type, null, null);
     }
 
     /**

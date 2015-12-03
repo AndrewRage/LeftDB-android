@@ -8,13 +8,13 @@ import com.github.andreyrage.leftdb.annotation.TableName;
 import java.util.List;
 
 import static com.github.andreyrage.leftdb.utils.CheckNullUtils.checkNotNull;
+import static com.github.andreyrage.leftdb.utils.CheckNullUtils.nonNullString;
 import static com.github.andreyrage.leftdb.utils.CheckNullUtils.unmodifiableListOfStrings;
 
 /**
  * Created by Vlad on 11/19/15.
  */
 
-@SuppressWarnings("unused")
 public final class SelectQuery {
 
 	private final @NonNull Class<?> entity;
@@ -47,6 +47,7 @@ public final class SelectQuery {
 		return distinct;
 	}
 
+	@NonNull
 	public String table() {
 		if (entity.isAnnotationPresent(TableName.class)) {
 			return entity.getAnnotation(TableName.class).value();
@@ -54,38 +55,47 @@ public final class SelectQuery {
 		return entity.getSimpleName();
 	}
 
+	@NonNull
 	public Class<?> entity() {
 		return entity;
 	}
 
+	@NonNull
 	public List<String> columns() {
 		return columns;
 	}
 
+	@NonNull
 	public String where() {
 		return where;
 	}
 
+	@NonNull
 	public List<String> whereArgs() {
 		return whereArgs;
 	}
 
+	@NonNull
 	public String groupBy() {
 		return groupBy;
 	}
 
+	@NonNull
 	public String having() {
 		return having;
 	}
 
+	@NonNull
 	public String orderBy() {
 		return orderBy;
 	}
 
+	@NonNull
 	public String limit() {
 		return limit;
 	}
 
+	@NonNull
 	public static Builder builder() {
 		return new Builder();
 	}
@@ -144,11 +154,11 @@ public final class SelectQuery {
 
 		private boolean distinct;
 
-		private List<String> columns;
+		private String[] columns;
 
 		private String where;
 
-		private List<String> whereArgs;
+		private Object[] whereArgs;
 
 		private String groupBy;
 
@@ -160,7 +170,6 @@ public final class SelectQuery {
 
 		@NonNull
 		public Builder entity(@NonNull Class<?> entity) {
-			checkNotNull(entity, "Table name is null or empty");
 			this.entity = entity;
 			return this;
 		}
@@ -174,7 +183,7 @@ public final class SelectQuery {
 
 		@NonNull
 		public Builder columns(@Nullable String... columns) {
-			this.columns = unmodifiableListOfStrings(columns);
+			this.columns = columns;
 			return this;
 		}
 
@@ -187,7 +196,7 @@ public final class SelectQuery {
 
 		@NonNull
 		public Builder whereArgs(@Nullable Object... whereArgs) {
-			this.whereArgs = unmodifiableListOfStrings(whereArgs);
+			this.whereArgs = whereArgs;
 			return this;
 		}
 
@@ -233,12 +242,22 @@ public final class SelectQuery {
 
 		@NonNull
 		public SelectQuery build() {
-			if (where == null && whereArgs != null && !whereArgs.isEmpty()) {
+			checkNotNull(entity, "Table name is null or empty");
+
+			if (where == null && whereArgs != null && whereArgs.length > 0) {
 				throw new IllegalStateException("You can not use whereArgs without where clause");
 			}
-			return new SelectQuery(entity, distinct, columns,
-					where, whereArgs, groupBy, having,
-					orderBy, limit
+
+			return new SelectQuery(
+					entity,
+					distinct,
+					unmodifiableListOfStrings(columns),
+					nonNullString(where),
+					unmodifiableListOfStrings(whereArgs),
+					nonNullString(groupBy),
+					nonNullString(having),
+					nonNullString(orderBy),
+					limit == null ? nonNullString(limit) : limit
 			);
 
 		}
