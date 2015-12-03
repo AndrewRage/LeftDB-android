@@ -583,27 +583,27 @@ public class DbAssetsTest extends AndroidTestCase {
 		// CountQuery
 
 		count = dbUtils.count(CountQuery.builder()
-				.table(SerializableObject.class)
+				.entity(SerializableObject.class)
 				.build()
 		);
 		assertEquals(10, count);
 
 		count = dbUtils.count(CountQuery.builder()
-				.table(SerializableObject.class)
+				.entity(SerializableObject.class)
 				.where("id > 102")
 				.build()
 		);
 		assertEquals(7, count);
 
 		count = dbUtils.count(CountQuery.builder()
-				.table(SerializableObject.class)
+				.entity(SerializableObject.class)
 				.where(null)
 				.build()
 		);
 		assertEquals(10, count);
 
 		count = dbUtils.count(CountQuery.builder()
-				.table(SerializableObject.class)
+				.entity(SerializableObject.class)
 				.where("id > ?")
 				.whereArgs("102")
 				.build()

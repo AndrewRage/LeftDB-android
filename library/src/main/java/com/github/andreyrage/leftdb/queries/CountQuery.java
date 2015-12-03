@@ -93,8 +93,7 @@ public final class CountQuery {
 		}
 
 		@NonNull
-		public Builder table(@NonNull Class<?> entity) {
-			checkNotNull(entity, "Table name is null or empty");
+		public Builder entity(@NonNull Class<?> entity) {
 			this.entity = entity;
 			return this;
 		}
@@ -113,6 +112,8 @@ public final class CountQuery {
 
 		@NonNull
 		public CountQuery build() {
+			checkNotNull(entity, "Table name is null or empty");
+
 			if (where == null && whereArgs != null && whereArgs.length > 0) {
 				throw new IllegalStateException("You can not use whereArgs without where clause");
 			}

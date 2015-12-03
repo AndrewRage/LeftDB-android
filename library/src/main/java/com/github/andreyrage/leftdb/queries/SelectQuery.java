@@ -170,7 +170,6 @@ public final class SelectQuery {
 
 		@NonNull
 		public Builder entity(@NonNull Class<?> entity) {
-			checkNotNull(entity, "Table name is null or empty");
 			this.entity = entity;
 			return this;
 		}
@@ -243,9 +242,12 @@ public final class SelectQuery {
 
 		@NonNull
 		public SelectQuery build() {
+			checkNotNull(entity, "Table name is null or empty");
+
 			if (where == null && whereArgs != null && whereArgs.length > 0) {
 				throw new IllegalStateException("You can not use whereArgs without where clause");
 			}
+
 			return new SelectQuery(
 					entity,
 					distinct,
