@@ -16,6 +16,7 @@ import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.PrimaryKeyId;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
+import com.github.andreyrage.leftdb.queries.CountQuery;
 import com.github.andreyrage.leftdb.queries.DeleteQuery;
 import com.github.andreyrage.leftdb.queries.SelectQuery;
 import com.github.andreyrage.leftdb.queries.UpdateQuery;
@@ -534,6 +535,82 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertNotSame(object2, dbList.get(0));
 	}
 
+	public void testCount() throws Exception {
+		List<SerializableObject> list = new ArrayList<>();
+		list.add(new SerializableObject(100, "name1", null));
+		list.add(new SerializableObject(101, "name2", null));
+		list.add(new SerializableObject(102, "name2", null));
+		list.add(new SerializableObject(103, "name2", null));
+		list.add(new SerializableObject(104, "name4", null));
+		list.add(new SerializableObject(105, "name4", null));
+		list.add(new SerializableObject(106, "name4", null));
+		list.add(new SerializableObject(107, "name4", null));
+		list.add(new SerializableObject(108, "name4", null));
+		list.add(new SerializableObject(109, "name4", null));
+
+		dbUtils.add(list);
+
+		// SelectQuery
+
+		int count = dbUtils.count(SelectQuery.builder()
+				.entity(SerializableObject.class)
+				.build()
+		);
+		assertEquals(10, count);
+
+		count = dbUtils.count(SelectQuery.builder()
+				.entity(SerializableObject.class)
+				.where("id > 102")
+				.build()
+		);
+		assertEquals(7, count);
+
+		count = dbUtils.count(SelectQuery.builder()
+				.entity(SerializableObject.class)
+				.limit(5)
+				.build()
+		);
+		assertEquals(5, count);
+
+		count = dbUtils.count(SelectQuery.builder()
+				.entity(SerializableObject.class)
+				.groupBy("otherName")
+				.having("count(otherName) < 5")
+				.build()
+		);
+		assertEquals(2, count);
+
+		// CountQuery
+
+		count = dbUtils.count(CountQuery.builder()
+				.entity(SerializableObject.class)
+				.build()
+		);
+		assertEquals(10, count);
+
+		count = dbUtils.count(CountQuery.builder()
+				.entity(SerializableObject.class)
+				.where("id > 102")
+				.build()
+		);
+		assertEquals(7, count);
+
+		count = dbUtils.count(CountQuery.builder()
+				.entity(SerializableObject.class)
+				.where(null)
+				.build()
+		);
+		assertEquals(10, count);
+
+		count = dbUtils.count(CountQuery.builder()
+				.entity(SerializableObject.class)
+				.where("id > ?")
+				.whereArgs("102")
+				.build()
+		);
+		assertEquals(7, count);
+	}
+
 	public void testDelete() throws Exception {
 		SerializableObject object1 = new SerializableObject(100, "simple name", null);
 		SerializableObject object2 = new SerializableObject(101, "simple name", null);
@@ -563,7 +640,7 @@ public class DbAssetsTest extends AndroidTestCase {
 		ContentValues contentValues = new ContentValues();
 		contentValues.put("otherName", "New name");
 		dbUtils.update(
-				UpdateQuery.builder().table(SerializableObject.class).where("id = 100").build(),
+				UpdateQuery.builder().entity(SerializableObject.class).where("id = 100").build(),
 				contentValues
 		);
 		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);

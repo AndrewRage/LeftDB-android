@@ -9,61 +9,13 @@ repositories {
 }
     
 dependencies {
-  compile 'com.github.andreyrage:leftdb:1.0'
+  compile 'com.github.andreyrage:leftdb:1.1'
 }
 ```
 
-### Getting started
-##### 1. Create helper:
-``` java
-public class DbHelper extends LeftDBUtils {
-    private static volatile DbHelper sInstance;
-
-    private DbHelper() {
-        ...
-    }
-
-    public static DbHelper getInstance(Context context) {
-        DbHelper localInstance = sInstance;
-        if (localInstance == null) {
-            synchronized (DbHelper.class) {
-                localInstance = sInstance;
-                if (localInstance == null) {
-                    sInstance = localInstance = new DbHelper();
-                    localInstance.setDBContext(context, "sample.sqlite", 1);
-                }
-            }
-        }
-        return localInstance;
-    }
-    
-    @Override
-    public void onCreate(SQLiteDatabase db) {
-        super.onCreate(db);
-        createTable(db, SimpleEntity.class);
-    }
-    
-    ...
-}
-```
-
-##### 2. Create entity with default constructor:
-``` java
-public class SimpleEntity {
-
-    @ColumnAutoInc private Long id;
-    @ColumnName("name") private String entityName;
-    @ColumnDAO private Properties properties;
-
-    public SimpleEntity() {
-    }
-    
-    ...
-}
-```
-
-##### 3. Now you can save and restore objects from database.
-For example:
+### How it work
+To work with the database you just need to use a helper. LeftDB can save and restore objects from database.
+See [Getting started](https://github.com/AndreyRage/LeftDB-android/wiki/Getting-started) for details.
 ``` java
 DbHelper dbHelper = DbHelper.getInstance(this);
 
