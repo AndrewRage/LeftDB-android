@@ -640,7 +640,7 @@ public class DbAssetsTest extends AndroidTestCase {
 		ContentValues contentValues = new ContentValues();
 		contentValues.put("otherName", "New name");
 		dbUtils.update(
-				UpdateQuery.builder().table(SerializableObject.class).where("id = 100").build(),
+				UpdateQuery.builder().entity(SerializableObject.class).where("id = 100").build(),
 				contentValues
 		);
 		List<SerializableObject> dbList = dbUtils.getAll(SerializableObject.class);
