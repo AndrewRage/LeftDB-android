@@ -20,6 +20,7 @@ import com.github.andreyrage.leftdb.annotation.ColumnIgnore;
 import com.github.andreyrage.leftdb.annotation.ColumnName;
 import com.github.andreyrage.leftdb.annotation.ColumnPrimaryKey;
 import com.github.andreyrage.leftdb.annotation.TableName;
+import com.github.andreyrage.leftdb.config.RelationshipConfig;
 import com.github.andreyrage.leftdb.queries.CountQuery;
 import com.github.andreyrage.leftdb.queries.DeleteQuery;
 import com.github.andreyrage.leftdb.queries.SelectQuery;
@@ -962,7 +963,37 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         db.execSQL(createTableSQL(type));
     }
 
+    /**
+     * Create table in database with relationship query builder
+     *
+     * @param db The database.
+     * @param type The class of object that need to create
+     * @param relationship {@link RelationshipConfig}
+     * */
+    protected void createTable(@NonNull SQLiteDatabase db, @NonNull Class<?> type, @Nullable RelationshipConfig relationship){
+        db.execSQL(createTableSQL(type, relationship));
+    }
+
+    /**
+     * Create table in database with collection of relationship query builders
+     *
+     * @param db The database.
+     * @param type The class of object that need to create
+     * @param relationships collection of {@link RelationshipConfig}
+     * */
+    protected void createTable(@NonNull SQLiteDatabase db, @NonNull Class<?> type, @Nullable Collection<RelationshipConfig> relationships){
+        db.execSQL(createTableSQL(type, relationships));
+    }
+
     protected String createTableSQL(@NonNull Class<?> type) throws IllegalArgumentException {
+        return createTableSQL(type, (Collection<RelationshipConfig>) null);
+    }
+
+    protected String createTableSQL(@NonNull Class<?> type, @Nullable RelationshipConfig relationship) throws IllegalArgumentException {
+        return createTableSQL(type, relationship != null ? Collections.singletonList(relationship) : (Collection<RelationshipConfig>) null);
+    }
+
+    protected String createTableSQL(@NonNull Class<?> type, @Nullable Collection<RelationshipConfig> relationships) throws IllegalArgumentException {
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("CREATE TABLE ");
         sqlBuilder.append(getTableName(type));
@@ -1065,6 +1096,21 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         if (columnCount == 0) {
             throw new IllegalArgumentException("Cannot create a table without at least one column.");
         }
+        if (relationships != null && !relationships.isEmpty()) {
+            for (RelationshipConfig config : relationships) {
+                sqlBuilder.append(
+                        String.format(", FOREIGN KEY (%s) REFERENCES %s (%s)",
+                                config.foreignKey(),
+                                config.parentTable(),
+                                config.parentKey()));
+                if (!TextUtils.isEmpty(config.onDelete())) {
+                    sqlBuilder.append(String.format(" ON DELETE %s", config.onDelete()));
+                }
+                if (!TextUtils.isEmpty(config.onUpdate())) {
+                    sqlBuilder.append(String.format(" ON UPDATE %s", config.onUpdate()));
+                }
+            }
+        }
         sqlBuilder.append(" );");
         return sqlBuilder.toString();
     }
@@ -1093,6 +1139,44 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     private String deleteTableSQL(@NonNull Class<?> type) {
         return String.format("DROP TABLE IF EXISTS %s;", getTableName(type));
+    }
+
+    /**
+     * Create relationship in database for exists table
+     *
+     * @param db The database.
+     * @param type The parent class of object that need to create relationship
+     * */
+    protected void createRelationship(@NonNull SQLiteDatabase db, @NonNull Class<?> type) {
+        String parentTableName = getTableName(type);
+        for (Field field : type.getDeclaredFields()) {
+            if (field.isAnnotationPresent(ColumnChild.class)) {
+                String foreignKey = field.getAnnotation(ColumnChild.class).foreignKey();
+                String parentKey = field.getAnnotation(ColumnChild.class).parentKey();
+                Class<?> fieldType;
+                if (field.getType().isAssignableFrom(List.class)) {
+                    ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
+                    fieldType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
+                } else {
+                    fieldType = field.getType();
+                }
+                String tableName = getTableName(fieldType);
+                String tempTableName = String.format("%s_temp", tableName);
+                db.execSQL(String.format("ALTER TABLE %s RENAME TO %s;", tableName, tempTableName));
+                createTable(
+                        db,
+                        fieldType,
+                        RelationshipConfig.builder()
+                                .parentTable(parentTableName)
+                                .foreignKey(foreignKey)
+                                .parentKey(parentKey)
+                                .onDelete(RelationshipConfig.CASCADE)
+                                .build()
+                );
+                db.execSQL(String.format("INSERT INTO %s SELECT * FROM %s;", tableName, tempTableName));
+                db.execSQL(String.format("DROP TABLE %s;", tempTableName));
+            }
+        }
     }
 
     /**

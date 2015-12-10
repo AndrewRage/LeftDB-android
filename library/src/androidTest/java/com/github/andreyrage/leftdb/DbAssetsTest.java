@@ -407,6 +407,11 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals(2, dbList.size());
 		assertEquals("child1", dbList.get(0).getChild().getName());
 		assertEquals("child2", dbList.get(1).getChild().getName());
+
+		dbUtils.delete(parentOne1);
+
+		assertEquals(1, dbUtils.getAll(ParentOne.class).size());
+		assertEquals(1, dbUtils.getAll(ChildOne.class).size());
 	}
 
 	public void testOneToOneAutoInc() throws Exception {
@@ -449,6 +454,11 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals("child3", dbList.get(1).getChilds().get(0).getName());
 		assertEquals("child4", dbList.get(1).getChilds().get(1).getName());
 		assertEquals("child5", dbList.get(1).getChilds().get(2).getName());
+
+		dbUtils.delete(parentMany1);
+
+		assertEquals(1, dbUtils.getAll(ParentMany.class).size());
+		assertEquals(3, dbUtils.getAll(ChildMany.class).size());
 	}
 
 	public void testOneToManyAutoInc() throws Exception {
