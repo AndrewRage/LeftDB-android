@@ -49,6 +49,9 @@ public class DBUtils extends LeftDBUtils {
 				FloatKey.class,
 				FloatKeyChild.class
 		));
+
+		createRelationship(db, ParentOne.class);
+		createRelationship(db, ParentMany.class);
 	}
 
 	@Override

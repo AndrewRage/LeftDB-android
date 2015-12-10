@@ -15,3 +15,7 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+
+## entities
+-keep public class com.github.andreyrage.leftdb.sample.entities.** { *; }
