@@ -710,32 +710,41 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
+    //TODO add docs!
     @NonNull
-    private <T> List<T> queryListMapper(@Nullable Cursor cursor, @NonNull Class<T> type) {
+    public <T> List<T> cursorMapper(@Nullable Cursor cursor, @NonNull Class<T> type) {
+        return cursorMapper(cursor, type, true);
+    }
+
+    //TODO add docs!
+    @NonNull
+    public <T> List<T> cursorMapper(@Nullable Cursor cursor, @NonNull Class<T> type, boolean closeCursor) {
         List<T> results = new ArrayList<>();
         if (cursor == null || cursor.isClosed()) {
             return results;
         }
         if (cursor.moveToFirst()) {
             do {
-                results.add(cursorMapper(cursor, type));
+                results.add(fieldMapper(cursor, type));
             } while (cursor.moveToNext());
         }
-        cursor.close();
+        if (closeCursor) {
+            cursor.close();
+        }
         return results;
     }
 
     @NonNull
     private <T> List<T> queryListMapper(@NonNull String query, @NonNull Class<T> type) {
-        return queryListMapper(db.rawQuery(query, null), type);
+        return cursorMapper(db.rawQuery(query, null), type);
     }
 
     @NonNull
     private <T> List<T> queryListMapper(@NonNull SelectQuery query, @NonNull Class<T> type) {
-        return queryListMapper(byQuery(query), type);
+        return cursorMapper(byQuery(query), type);
     }
 
-    private <T> T cursorMapper(@NonNull Cursor cursor, @NonNull Class<T> type) {
+    private <T> T fieldMapper(@NonNull Cursor cursor, @NonNull Class<T> type) {
         T result = null;
         try {
             result = type.newInstance();
@@ -747,7 +756,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "cursorMapper", e);
+            Log.e(TAG, "fieldMapper", e);
         }
         return result;
     }
@@ -873,7 +882,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     @NonNull
-    private <T> String getTableName(@NonNull Class<T> type) {
+    protected static <T> String getTableName(@NonNull Class<T> type) {
         String tableName = type.getSimpleName();
         if (type.isAnnotationPresent(TableName.class)) {
             tableName = type.getAnnotation(TableName.class).value();

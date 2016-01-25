@@ -1,2 +1,2 @@
-include ':sample', ':leftdb'
+include ':sample', ':leftdb', ':sampleContentProvider'
 project(':leftdb').projectDir = new File('library')
