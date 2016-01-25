@@ -1,9 +1,10 @@
 package com.github.andreyrage.leftdb.entities;
 
+import com.bluelinelabs.logansquare.annotation.JsonField;
+import com.bluelinelabs.logansquare.annotation.JsonObject;
 import com.github.andreyrage.leftdb.annotation.ColumnAutoInc;
 import com.github.andreyrage.leftdb.annotation.ColumnIgnore;
 import com.github.andreyrage.leftdb.annotation.ColumnName;
-import com.github.andreyrage.leftdb.annotation.TableName;
 
 import java.io.Serializable;
 
@@ -11,11 +12,17 @@ import java.io.Serializable;
  * Created by rage on 11/18/15.
  */
 
-@TableName("Object")
+@JsonObject
+//@TableName("Object")
 public class SerializableObject implements Serializable {
 
+    @JsonField
     @ColumnAutoInc private long id;
+
+    @JsonField
     @ColumnName("otherName") private String name;
+
+    @JsonField
     @ColumnIgnore private SerializableObject mObject;
 
     public SerializableObject() {
