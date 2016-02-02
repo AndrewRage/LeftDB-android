@@ -1,9 +1,7 @@
 package com.github.andreyrage.leftdb.samplecontentprovider.activities;
 
-import android.content.ContentValues;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.LoaderManager;
@@ -21,12 +19,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.github.andreyrage.leftdb.AsyncCall;
-import com.github.andreyrage.leftdb.samplecontentprovider.SampleProvider;
+import com.github.andreyrage.leftdb.LeftContentProvider;
 import com.github.andreyrage.leftdb.samplecontentprovider.R;
+import com.github.andreyrage.leftdb.samplecontentprovider.SampleProvider;
 import com.github.andreyrage.leftdb.samplecontentprovider.adapters.EntityAdapter;
 import com.github.andreyrage.leftdb.samplecontentprovider.entities.SimpleEntity;
 import com.github.andreyrage.leftdb.samplecontentprovider.helpers.DbHelper;
-import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,14 +117,17 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             final SimpleEntity entity = new SimpleEntity(mEditText.getText().toString());
             AsyncCall.make(new AsyncCall.Call<Void>() {
                 @Override public Void call() {
-                    ContentValues values = new ContentValues();
+                    /*ContentValues values = new ContentValues();
                     values.put("name", entity.getEntityName());
                     values.put("properties", new Gson().toJson(entity.getProperties()));
                     Uri uri = MainActivity.this.getContentResolver().insert(SampleProvider.getUri(SimpleEntity.class), values);
                     if (uri != null) {
                         long id = Long.parseLong(uri.getLastPathSegment());
                         entity.setId(id);
-                    }
+                    }*/
+                    Log.d(TAG, "addEntity: " + entity);
+                    LeftContentProvider.add(entity);
+                    Log.d(TAG, "entity added: " + entity);
                     return null;
                 }
             }, new AsyncCall.Do<Void>() {

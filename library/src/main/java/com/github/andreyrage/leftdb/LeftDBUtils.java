@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.CursorWindow;
 import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -56,6 +57,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     protected LeftDBHandler dbHandler;
     protected SQLiteDatabase db;
+
+    protected ContentResolver contentResolver;
+
+    public void setContentResolver(ContentResolver contentResolver) {
+        this.contentResolver = contentResolver;
+    }
 
     /**
      * Initialize DBHandler
@@ -528,7 +535,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      *
      * Rightutils compatibility
      * */
-    public <T> long add(@NonNull final T element) {
+    public <T> long add(@NonNull T element) {
+        return add(element, null);
+    }
+
+    //TODO
+    protected <T> long add(@NonNull T element, @Nullable Uri uri) {
         final ContentValues values = new ContentValues();
         boolean isColumnChild = false;
         Field fieldAutoInc = null;
@@ -547,8 +559,24 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                 }
             }
         }
-        long row = db.insertWithOnConflict(getTableName(element.getClass()),
-                null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        long row = -1;
+        if (uri != null) {
+            if (contentResolver == null) {
+                //TODO throw right exception
+                throw new RuntimeException("content resolver not init");
+            }
+            Uri resultUri = contentResolver.insert(uri, values);
+            if (resultUri != null) {
+                try {
+                    row = Long.parseLong(resultUri.getLastPathSegment());
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            row = db.insertWithOnConflict(getTableName(element.getClass()),
+                    null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        }
         values.clear();
         if (row > 0 && fieldAutoInc != null) {
             try {
