@@ -10,6 +10,7 @@ import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.FloatKey;
 import com.github.andreyrage.leftdb.entities.FloatKeyChild;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
+import com.github.andreyrage.leftdb.entities.ParentManyArray;
 import com.github.andreyrage.leftdb.entities.StringKeyChild;
 import com.github.andreyrage.leftdb.entities.StringKey;
 import com.github.andreyrage.leftdb.entities.ParentMany;
@@ -440,6 +441,33 @@ public class DbAssetsTest extends AndroidTestCase {
 
 		dbUtils.add(list);
 		List<ParentMany> dbList = dbUtils.getAll(ParentMany.class);
+
+		assertEquals(2, dbList.size());
+		assertEquals(2, dbList.get(0).getChilds().size());
+		assertEquals("child1", dbList.get(0).getChilds().get(0).getName());
+		assertEquals("child2", dbList.get(0).getChilds().get(1).getName());
+		assertEquals(3, dbList.get(1).getChilds().size());
+		assertEquals("child3", dbList.get(1).getChilds().get(0).getName());
+		assertEquals("child4", dbList.get(1).getChilds().get(1).getName());
+		assertEquals("child5", dbList.get(1).getChilds().get(2).getName());
+	}
+
+	public void testOneToManyArray() throws Exception {
+		ArrayList<ChildMany> childList1 = new ArrayList<>();
+		childList1.add(new ChildMany("child1"));
+		childList1.add(new ChildMany("child2"));
+		ParentManyArray parentMany1 = new ParentManyArray(200L, "parent1", childList1);
+		ArrayList<ChildMany> childList2 = new ArrayList<>();
+		childList2.add(new ChildMany("child3"));
+		childList2.add(new ChildMany("child4"));
+		childList2.add(new ChildMany("child5"));
+		ParentManyArray parentMany2 = new ParentManyArray(201L, "parent2", childList2);
+		List<ParentManyArray> list = new ArrayList<>();
+		list.add(parentMany1);
+		list.add(parentMany2);
+
+		dbUtils.add(list);
+		List<ParentManyArray> dbList = dbUtils.getAll(ParentManyArray.class);
 
 		assertEquals(2, dbList.size());
 		assertEquals(2, dbList.get(0).getChilds().size());

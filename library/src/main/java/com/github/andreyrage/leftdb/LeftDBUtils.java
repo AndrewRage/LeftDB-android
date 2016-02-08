@@ -572,7 +572,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                     parentKeyField.setAccessible(true);
                     Object parentKeyValue = parentKeyField.get(element);
                     String foreignKey = getForeignKey(value);
-                    if (value.getType().isAssignableFrom(List.class)) {
+                    if (List.class.isAssignableFrom(value.getType())) {
                         List list = (List) value.get(element);
                         for (Object o : list) {
                             Field foreignKeyField = o.getClass().getDeclaredField(foreignKey);
@@ -819,7 +819,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         } else {
             parentKeyValue = null;
         }
-        if (fieldType.isAssignableFrom(List.class)) {
+        if (List.class.isAssignableFrom(fieldType)) {
             field.set(result, getAllWhere(formatParentKeyValue(foreignKey, parentKeyValue), (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]));
         } else {
             List resultList = getAllWhere(formatParentKeyValue(foreignKey, parentKeyValue), fieldType);
