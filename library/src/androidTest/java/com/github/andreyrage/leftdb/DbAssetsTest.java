@@ -17,6 +17,8 @@ import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.PrimaryKeyId;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
+import com.github.andreyrage.leftdb.entities.WrongIncObject;
+import com.github.andreyrage.leftdb.exceptions.IncorrectAutoIncTypeException;
 import com.github.andreyrage.leftdb.queries.CountQuery;
 import com.github.andreyrage.leftdb.queries.DeleteQuery;
 import com.github.andreyrage.leftdb.queries.SelectQuery;
@@ -26,6 +28,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -134,6 +137,24 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals(1, dbUtils.count(SerializableObject.class, "id = 1"));
 		assertEquals(1, dbList.get(0).getId());
 		assertEquals(2, dbList.get(1).getId());
+	}
+
+	public void testAddEntityAutoIncThrow() throws Exception {
+		boolean isSingleAddException = false;
+		try {
+			dbUtils.add(new WrongIncObject());
+		} catch (IncorrectAutoIncTypeException e) {
+			isSingleAddException = true;
+		}
+		assertTrue(isSingleAddException);
+
+		boolean isMultiAddException = false;
+		try {
+			dbUtils.add(Collections.singletonList(new WrongIncObject()));
+		} catch (IncorrectAutoIncTypeException e) {
+			isMultiAddException = true;
+		}
+		assertTrue(isMultiAddException);
 	}
 
 	public void testColumnName() throws Exception {
