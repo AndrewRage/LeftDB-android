@@ -21,6 +21,7 @@ import com.github.andreyrage.leftdb.annotation.ColumnName;
 import com.github.andreyrage.leftdb.annotation.ColumnPrimaryKey;
 import com.github.andreyrage.leftdb.annotation.TableName;
 import com.github.andreyrage.leftdb.config.RelationshipConfig;
+import com.github.andreyrage.leftdb.exceptions.IncorrectAutoIncTypeException;
 import com.github.andreyrage.leftdb.queries.CountQuery;
 import com.github.andreyrage.leftdb.queries.DeleteQuery;
 import com.github.andreyrage.leftdb.queries.SelectQuery;
@@ -487,6 +488,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                     }
                 }
                 db.setTransactionSuccessful();
+            } catch (IncorrectAutoIncTypeException e) {
+                throw e;
             } catch (Exception e) {
                 count = -1;
                 Log.e(TAG, "add list, use transaction", e);
@@ -536,8 +539,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             if (!value.isAnnotationPresent(ColumnIgnore.class)
                     && !Modifier.isStatic(value.getModifiers())) {
                 if (value.isAnnotationPresent(ColumnAutoInc.class)) {
-                    valueAutoIncMapper(values, value, element);
-                    fieldAutoInc = value;
+                    if (value.getType().isAssignableFrom(long.class) || value.getType().isAssignableFrom(Long.class)) {
+                        valueAutoIncMapper(values, value, element);
+                        fieldAutoInc = value;
+                    } else {
+                        throw new IncorrectAutoIncTypeException("Autoincrement field must be only long or Long.class");
+                    }
                 } else if (value.isAnnotationPresent(ColumnDAO.class)) {
                     valueDAOMapper(values, value, element);
                 } else if (value.isAnnotationPresent(ColumnChild.class)) {
@@ -573,7 +580,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                     parentKeyField.setAccessible(true);
                     Object parentKeyValue = parentKeyField.get(element);
                     String foreignKey = getForeignKey(value);
-                    if (value.getType().isAssignableFrom(List.class)) {
+                    if (List.class.isAssignableFrom(value.getType())) {
                         List list = (List) value.get(element);
                         for (Object o : list) {
                             Field foreignKeyField = o.getClass().getDeclaredField(foreignKey);
@@ -820,7 +827,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         } else {
             parentKeyValue = null;
         }
-        if (fieldType.isAssignableFrom(List.class)) {
+        if (List.class.isAssignableFrom(fieldType)) {
             field.set(result, getAllWhere(formatParentKeyValue(foreignKey, parentKeyValue), (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]));
         } else {
             List resultList = getAllWhere(formatParentKeyValue(foreignKey, parentKeyValue), fieldType);
