@@ -749,7 +749,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             for (Field field : result.getClass().getDeclaredFields()) {
                 if (!field.isAnnotationPresent(ColumnIgnore.class)) {
                     if (!Modifier.isStatic(field.getModifiers())) {
-                        fieldMapper(result, cursor, field, getColumnName(field));
+                        fieldMapper(result, cursor, field, getColumnName(field), type);
                     }
                 }
             }
@@ -759,12 +759,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return result;
     }
 
-    private <T> void fieldMapper(@NonNull T result, @NonNull Cursor cursor, final Field field, @NonNull String columnName) {
+    private <T> void fieldMapper(@NonNull T result, @NonNull Cursor cursor, final Field field, @NonNull String columnName, @NonNull Class<?> parentType) {
         field.setAccessible(true);
 		Class<?> fieldType = field.getType();
         try {
             if (field.isAnnotationPresent(ColumnChild.class)) {
-                childFieldMapper(result, cursor, field, fieldType);
+                childFieldMapper(result, cursor, field, fieldType, parentType);
                 return;
             }
             if (cursor.isNull(cursor.getColumnIndex(columnName))) {
@@ -812,22 +812,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
     }
 
-    private <T> void childFieldMapper(@NonNull T result, @NonNull Cursor cursor, Field field, Class<?> fieldType) throws IllegalAccessException {
-        String foreignKey = getForeignKey(field);
-        try {
-            Field foreignField;
-            if (List.class.isAssignableFrom(field.getType())) {
-                foreignField = ((Class<?>)((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]).getDeclaredField(foreignKey);
-            } else {
-                foreignField = field.getType().getDeclaredField(foreignKey);
-            }
-            if (foreignField.isAnnotationPresent(ColumnName.class)) {
-                foreignKey = foreignField.getAnnotation(ColumnName.class).value();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "childFieldMapper", e);
-        }
-        int columnIndex = cursor.getColumnIndex(getParentKey(field));
+    private <T> void childFieldMapper(@NonNull T result, @NonNull Cursor cursor, @NonNull Field field, @NonNull Class<?> fieldType, @NonNull Class<?> parentType) throws IllegalAccessException {
+        String foreignKey = getForeignKeyColumnName(field);
+        int columnIndex = cursor.getColumnIndex(getParentKeyColumnName(parentType, field));
         final Object parentKeyValue;
         if (getType(cursor, columnIndex) == FIELD_TYPE_BLOB) {
             parentKeyValue = cursor.getBlob(columnIndex);
@@ -919,6 +906,24 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return columnName;
     }
 
+    private String getForeignKeyColumnName(@NonNull Field field) {
+        String foreignKey = getForeignKey(field);
+        try {
+            Field foreignField;
+            if (List.class.isAssignableFrom(field.getType())) {
+                foreignField = ((Class<?>)((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]).getDeclaredField(foreignKey);
+            } else {
+                foreignField = field.getType().getDeclaredField(foreignKey);
+            }
+            if (foreignField.isAnnotationPresent(ColumnName.class)) {
+                foreignKey = foreignField.getAnnotation(ColumnName.class).value();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "getForeignKeyColumnName", e);
+        }
+        return foreignKey;
+    }
+
     @NonNull
     private String getParentKey(@NonNull Field field) {
         String columnName = field.getName();
@@ -926,6 +931,19 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             columnName = field.getAnnotation(ColumnChild.class).parentKey();
         }
         return columnName;
+    }
+
+    private String getParentKeyColumnName(@NonNull Class<?> type, @NonNull Field field) {
+        String parentKey = field.getAnnotation(ColumnChild.class).parentKey();
+        try {
+            Field parentIdField = type.getDeclaredField(parentKey);
+            if (parentIdField.isAnnotationPresent(ColumnName.class)) {
+                parentKey = parentIdField.getAnnotation(ColumnName.class).value();
+            }
+        } catch (NoSuchFieldException e) {
+            Log.e(TAG, "getParentKeyColumnName", e);
+        }
+        return parentKey;
     }
 
     @Nullable
@@ -1171,8 +1189,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         String parentTableName = getTableName(type);
         for (Field field : type.getDeclaredFields()) {
             if (field.isAnnotationPresent(ColumnChild.class)) {
-                String foreignKey = field.getAnnotation(ColumnChild.class).foreignKey();
-                String parentKey = field.getAnnotation(ColumnChild.class).parentKey();
+                String foreignKey = getForeignKeyColumnName(field);
+                String parentKey = getParentKeyColumnName(type, field);
                 Class<?> fieldType;
                 if (List.class.isAssignableFrom(field.getType())) {
                     ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
