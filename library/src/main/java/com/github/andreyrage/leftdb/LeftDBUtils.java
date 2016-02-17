@@ -814,19 +814,6 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     private <T> void childFieldMapper(@NonNull T result, @NonNull Cursor cursor, Field field, Class<?> fieldType) throws IllegalAccessException {
         String foreignKey = getForeignKey(field);
-        try {
-            Field foreignField;
-            if (List.class.isAssignableFrom(field.getType())) {
-                foreignField = ((Class<?>)((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]).getDeclaredField(foreignKey);
-            } else {
-                foreignField = field.getType().getDeclaredField(foreignKey);
-            }
-            if (foreignField.isAnnotationPresent(ColumnName.class)) {
-                foreignKey = foreignField.getAnnotation(ColumnName.class).value();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "childFieldMapper", e);
-        }
         int columnIndex = cursor.getColumnIndex(getParentKey(field));
         final Object parentKeyValue;
         if (getType(cursor, columnIndex) == FIELD_TYPE_BLOB) {
