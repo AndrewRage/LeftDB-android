@@ -1161,7 +1161,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                 String foreignKey = field.getAnnotation(ColumnChild.class).foreignKey();
                 String parentKey = field.getAnnotation(ColumnChild.class).parentKey();
                 Class<?> fieldType;
-                if (field.getType().isAssignableFrom(List.class)) {
+                if (List.class.isAssignableFrom(field.getType())) {
                     ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
                     fieldType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
                 } else {

@@ -10,6 +10,7 @@ import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.FloatKey;
 import com.github.andreyrage.leftdb.entities.FloatKeyChild;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
+import com.github.andreyrage.leftdb.entities.ParentManyArray;
 import com.github.andreyrage.leftdb.entities.StringKeyChild;
 import com.github.andreyrage.leftdb.entities.StringKey;
 import com.github.andreyrage.leftdb.entities.ParentMany;
@@ -51,7 +52,7 @@ public class DBUtils extends LeftDBUtils {
 		));
 
 		createRelationship(db, ParentOne.class);
-		createRelationship(db, ParentMany.class);
+		createRelationship(db, ParentManyArray.class);
 	}
 
 	@Override
