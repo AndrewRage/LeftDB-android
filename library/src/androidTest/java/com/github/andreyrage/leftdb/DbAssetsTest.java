@@ -6,11 +6,16 @@ import android.test.AndroidTestCase;
 import com.github.andreyrage.leftdb.entities.AllFields;
 import com.github.andreyrage.leftdb.entities.AnnotationId;
 import com.github.andreyrage.leftdb.entities.ChildMany;
+import com.github.andreyrage.leftdb.entities.ChildManyCustomName;
 import com.github.andreyrage.leftdb.entities.ChildOne;
+import com.github.andreyrage.leftdb.entities.ChildOneCustomName;
 import com.github.andreyrage.leftdb.entities.FloatKey;
 import com.github.andreyrage.leftdb.entities.FloatKeyChild;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
 import com.github.andreyrage.leftdb.entities.ParentManyArray;
+import com.github.andreyrage.leftdb.entities.ParentManyArrayCustomName;
+import com.github.andreyrage.leftdb.entities.ParentManyCustomName;
+import com.github.andreyrage.leftdb.entities.ParentOneCustomName;
 import com.github.andreyrage.leftdb.entities.StringKeyChild;
 import com.github.andreyrage.leftdb.entities.StringKey;
 import com.github.andreyrage.leftdb.entities.ParentMany;
@@ -436,6 +441,26 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals(1, dbUtils.getAll(ChildOne.class).size());
 	}
 
+	public void testOneToOneCustomName() throws Exception {
+		ParentOneCustomName parentOne1 = new ParentOneCustomName(200, "parent1", new ChildOneCustomName("child1"));
+		ParentOneCustomName parentOne2 = new ParentOneCustomName(201, "parent2", new ChildOneCustomName("child2"));
+		List<ParentOneCustomName> list = new ArrayList<>();
+		list.add(parentOne1);
+		list.add(parentOne2);
+
+		dbUtils.add(list);
+		List<ParentOneCustomName> dbList = dbUtils.getAll(ParentOneCustomName.class);
+
+		assertEquals(2, dbList.size());
+		assertEquals("child1", dbList.get(0).getChild().getName());
+		assertEquals("child2", dbList.get(1).getChild().getName());
+
+		dbUtils.delete(parentOne1);
+
+		assertEquals(1, dbUtils.getAll(ParentOne.class).size());
+		assertEquals(1, dbUtils.getAll(ChildOne.class).size());
+	}
+
 	public void testOneToOneAutoInc() throws Exception {
 		ParentOne parentOne1 = new ParentOne("parent1", new ChildOne("child1"));
 		ParentOne parentOne2 = new ParentOne("parent2", new ChildOne("child2"));
@@ -483,6 +508,38 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals(3, dbUtils.getAll(ChildMany.class).size());
 	}
 
+	public void testOneToManyCustomName() throws Exception {
+		List<ChildManyCustomName> childList1 = new ArrayList<>();
+		childList1.add(new ChildManyCustomName("child1"));
+		childList1.add(new ChildManyCustomName("child2"));
+		ParentManyCustomName parentMany1 = new ParentManyCustomName(200L, "parent1", childList1);
+		List<ChildManyCustomName> childList2 = new ArrayList<>();
+		childList2.add(new ChildManyCustomName("child3"));
+		childList2.add(new ChildManyCustomName("child4"));
+		childList2.add(new ChildManyCustomName("child5"));
+		ParentManyCustomName parentMany2 = new ParentManyCustomName(201L, "parent2", childList2);
+		List<ParentManyCustomName> list = new ArrayList<>();
+		list.add(parentMany1);
+		list.add(parentMany2);
+
+		dbUtils.add(list);
+		List<ParentManyCustomName> dbList = dbUtils.getAll(ParentManyCustomName.class);
+
+		assertEquals(2, dbList.size());
+		assertEquals(2, dbList.get(0).getChilds().size());
+		assertEquals("child1", dbList.get(0).getChilds().get(0).getName());
+		assertEquals("child2", dbList.get(0).getChilds().get(1).getName());
+		assertEquals(3, dbList.get(1).getChilds().size());
+		assertEquals("child3", dbList.get(1).getChilds().get(0).getName());
+		assertEquals("child4", dbList.get(1).getChilds().get(1).getName());
+		assertEquals("child5", dbList.get(1).getChilds().get(2).getName());
+
+		dbUtils.delete(parentMany1);
+
+		assertEquals(1, dbUtils.getAll(ParentMany.class).size());
+		assertEquals(3, dbUtils.getAll(ChildMany.class).size());
+	}
+
 	public void testOneToManyArray() throws Exception {
 		ArrayList<ChildMany> childList1 = new ArrayList<>();
 		childList1.add(new ChildMany("child1"));
@@ -499,6 +556,33 @@ public class DbAssetsTest extends AndroidTestCase {
 
 		dbUtils.add(list);
 		List<ParentManyArray> dbList = dbUtils.getAll(ParentManyArray.class);
+
+		assertEquals(2, dbList.size());
+		assertEquals(2, dbList.get(0).getChilds().size());
+		assertEquals("child1", dbList.get(0).getChilds().get(0).getName());
+		assertEquals("child2", dbList.get(0).getChilds().get(1).getName());
+		assertEquals(3, dbList.get(1).getChilds().size());
+		assertEquals("child3", dbList.get(1).getChilds().get(0).getName());
+		assertEquals("child4", dbList.get(1).getChilds().get(1).getName());
+		assertEquals("child5", dbList.get(1).getChilds().get(2).getName());
+	}
+
+	public void testOneToManyArrayCustomName() throws Exception {
+		ArrayList<ChildManyCustomName> childList1 = new ArrayList<>();
+		childList1.add(new ChildManyCustomName("child1"));
+		childList1.add(new ChildManyCustomName("child2"));
+		ParentManyArrayCustomName parentMany1 = new ParentManyArrayCustomName(200L, "parent1", childList1);
+		ArrayList<ChildManyCustomName> childList2 = new ArrayList<>();
+		childList2.add(new ChildManyCustomName("child3"));
+		childList2.add(new ChildManyCustomName("child4"));
+		childList2.add(new ChildManyCustomName("child5"));
+		ParentManyArrayCustomName parentMany2 = new ParentManyArrayCustomName(201L, "parent2", childList2);
+		List<ParentManyArrayCustomName> list = new ArrayList<>();
+		list.add(parentMany1);
+		list.add(parentMany2);
+
+		dbUtils.add(list);
+		List<ParentManyArrayCustomName> dbList = dbUtils.getAll(ParentManyArrayCustomName.class);
 
 		assertEquals(2, dbList.size());
 		assertEquals(2, dbList.get(0).getChilds().size());
