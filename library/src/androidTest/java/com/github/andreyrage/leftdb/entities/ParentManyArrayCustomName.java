@@ -2,6 +2,7 @@ package com.github.andreyrage.leftdb.entities;
 
 import com.github.andreyrage.leftdb.annotation.ColumnAutoInc;
 import com.github.andreyrage.leftdb.annotation.ColumnChild;
+import com.github.andreyrage.leftdb.annotation.ColumnName;
 import com.github.andreyrage.leftdb.annotation.TableName;
 
 import java.util.ArrayList;
@@ -11,9 +12,9 @@ import java.util.ArrayList;
  */
 @TableName("ParentMany")
 public class ParentManyArrayCustomName {
-    @ColumnAutoInc private Long id;
+    @ColumnAutoInc @ColumnName("id") private Long mId;
     private String name;
-    @ColumnChild(foreignKey = "parent", parentKey = "id") private ArrayList<ChildManyCustomName> childs;
+    @ColumnChild(foreignKey = "parent", parentKey = "mId") private ArrayList<ChildManyCustomName> childs;
 
     public ParentManyArrayCustomName() {
     }
@@ -24,7 +25,7 @@ public class ParentManyArrayCustomName {
     }
 
     public ParentManyArrayCustomName(Long id, String name, ArrayList<ChildManyCustomName> childs) {
-        this.id = id;
+        this.mId = id;
         this.name = name;
         this.childs = childs;
     }
@@ -32,7 +33,7 @@ public class ParentManyArrayCustomName {
     @Override
     public String toString() {
         return "ParentMany{" +
-                "id=" + id +
+                "id=" + mId +
                 ", name='" + name + '\'' +
                 ", childs=" + childs +
                 '}';
@@ -45,7 +46,7 @@ public class ParentManyArrayCustomName {
 
         ParentManyArrayCustomName that = (ParentManyArrayCustomName) o;
 
-        if (id != that.id) return false;
+        if (mId != that.mId) return false;
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
         return !(childs != null ? !childs.equals(that.childs) : that.childs != null);
 
@@ -53,18 +54,18 @@ public class ParentManyArrayCustomName {
 
     @Override
     public int hashCode() {
-        int result = (int) (id ^ (id >>> 32));
+        int result = (int) (mId ^ (mId >>> 32));
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (childs != null ? childs.hashCode() : 0);
         return result;
     }
 
     public Long getId() {
-        return id;
+        return mId;
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.mId = id;
     }
 
     public String getName() {

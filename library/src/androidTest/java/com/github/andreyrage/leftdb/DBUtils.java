@@ -5,18 +5,17 @@ import android.database.sqlite.SQLiteDatabase;
 
 import com.github.andreyrage.leftdb.entities.AllFields;
 import com.github.andreyrage.leftdb.entities.AnnotationId;
-import com.github.andreyrage.leftdb.entities.ChildMany;
+import com.github.andreyrage.leftdb.entities.ChildManyCustomName;
 import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.FloatKey;
 import com.github.andreyrage.leftdb.entities.FloatKeyChild;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
-import com.github.andreyrage.leftdb.entities.StringKeyChild;
-import com.github.andreyrage.leftdb.entities.StringKey;
-import com.github.andreyrage.leftdb.entities.ParentMany;
+import com.github.andreyrage.leftdb.entities.ParentManyArrayCustomName;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.PrimaryKeyId;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
-
+import com.github.andreyrage.leftdb.entities.StringKey;
+import com.github.andreyrage.leftdb.entities.StringKeyChild;
 import com.github.andreyrage.leftdb.utils.SerializeUtils;
 
 import java.io.IOException;
@@ -37,9 +36,9 @@ public class DBUtils extends LeftDBUtils {
 		createTable(db, AllFields.class);
 		createTable(db, SerializableObject.class);
 		createTables(db, Arrays.asList(
-				ChildMany.class,
+				ChildManyCustomName.class,
 				ChildOne.class,
-				ParentMany.class,
+				ParentManyArrayCustomName.class,
 				ParentOne.class,
 				AnnotationId.class,
 				NotAnnotationId.class,
@@ -51,7 +50,7 @@ public class DBUtils extends LeftDBUtils {
 		));
 
 		createRelationship(db, ParentOne.class);
-		createRelationship(db, ParentMany.class);
+		createRelationship(db, ParentManyArrayCustomName.class);
 	}
 
 	@Override
