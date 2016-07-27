@@ -535,7 +535,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         final ContentValues values = new ContentValues();
         boolean isColumnChild = false;
         Field fieldAutoInc = null;
-        for (Field value : element.getClass().getDeclaredFields()) {
+        List<Field> fields = getAllFields(element.getClass());
+        for (Field value : fields) {
             if (!value.isAnnotationPresent(ColumnIgnore.class)
                     && !Modifier.isStatic(value.getModifiers())) {
                 if (value.isAnnotationPresent(ColumnAutoInc.class)) {
@@ -746,7 +747,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         T result = null;
         try {
             result = type.newInstance();
-            for (Field field : result.getClass().getDeclaredFields()) {
+            List<Field> fields = getAllFields(result.getClass());
+            for (Field field : fields) {
                 if (!field.isAnnotationPresent(ColumnIgnore.class)) {
                     if (!Modifier.isStatic(field.getModifiers())) {
                         fieldMapper(result, cursor, field, getColumnName(field), type);
@@ -877,6 +879,20 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         }
 
         return type;
+    }
+
+    private List<Field> getAllFields(Class<?> clazz) {
+        List<Field> fields = new ArrayList<>();
+        Class<?> current = clazz;
+        while (!current.isAssignableFrom(Object.class)) {
+            for (Field field : current.getDeclaredFields()) {
+                if (!field.getName().contains("$")) {
+                    fields.add(field);
+                }
+            }
+            current = current.getSuperclass();
+        }
+        return fields;
     }
 
     @NonNull
@@ -1037,7 +1053,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         sqlBuilder.append(getTableName(type));
         sqlBuilder.append(" (");
         int columnCount = 0;
-        for (Field field : type.getDeclaredFields()) {
+        List<Field> fields = getAllFields(type);
+        for (Field field : fields) {
             if (!field.isAnnotationPresent(ColumnIgnore.class)
                     && !field.isAnnotationPresent(ColumnChild.class)) {
                 String columnName = getColumnName(field);

@@ -10,8 +10,9 @@ public class ExtendEntity extends BaseEntity {
     public ExtendEntity() {
     }
 
-    public ExtendEntity(long id, String field) {
+    public ExtendEntity(long id, String baseField, String field) {
         setId(id);
+        setBaseField(baseField);
         this.field = field;
     }
 

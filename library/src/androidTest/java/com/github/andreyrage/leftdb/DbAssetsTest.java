@@ -794,14 +794,16 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals("New name", dbList.get(0).getName());
 	}
 
-	public void extendTest() throws Exception {
-		ExtendEntity object = new ExtendEntity(1, "value");
+	public void testExtend() throws Exception {
+		ExtendEntity object = new ExtendEntity(100, "base", "value");
 
 		dbUtils.add(object);
 
 		List<ExtendEntity> dbList = dbUtils.getAll(ExtendEntity.class);
 		assertEquals(1, dbList.size());
 		assertNotSame(object, dbList.get(0));
+		assertEquals(100, dbList.get(0).getId());
+		assertEquals("base", dbList.get(0).getBaseField());
 		assertEquals("value", dbList.get(0).getField());
 	}
 }
