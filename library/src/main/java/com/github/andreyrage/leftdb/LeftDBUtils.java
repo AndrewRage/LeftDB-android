@@ -207,9 +207,20 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             return false;
         }
         Field idField = null;
+
+        List<Field> fields = getAllFields(o.getClass());
+        for (Field field : fields) {
+            if (field.getName().equals(idFieldName)) {
+                idField = field;
+                break;
+            }
+        }
+        if (idField == null) {
+            return false;
+        }
+
         Long id = null;
         try {
-            idField = o.getClass().getDeclaredField(idFieldName);
             idField.setAccessible(true);
             id = (Long) idField.get(o);
         } catch (Exception e) {
@@ -573,7 +584,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     private <T> void addColumnChild(@NonNull final T element) {
-        for (Field value : element.getClass().getDeclaredFields()) {
+        List<Field> fields = getAllFields(element.getClass());
+        for (Field value : fields) {
             if (value.isAnnotationPresent(ColumnChild.class)) {
                 value.setAccessible(true);
                 try {
@@ -967,7 +979,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         String id = null;
         String possibleId = null;
         String possibleRealId = null;
-        for (Field field : type.getDeclaredFields()) {
+        List<Field> fields = getAllFields(type);
+        for (Field field : fields) {
             if (field.getType().isAssignableFrom(long.class) || field.getType().isAssignableFrom(Long.class)) {
                 if (field.isAnnotationPresent(ColumnPrimaryKey.class) || field.isAnnotationPresent(ColumnAutoInc.class)) {
                     id = field.getName();
@@ -1204,7 +1217,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * */
     protected void createRelationship(@NonNull SQLiteDatabase db, @NonNull Class<?> type) {
         String parentTableName = getTableName(type);
-        for (Field field : type.getDeclaredFields()) {
+        List<Field> fields = getAllFields(type);
+        for (Field field : fields) {
             if (field.isAnnotationPresent(ColumnChild.class)) {
                 String foreignKey = getForeignKeyColumnName(field);
                 String parentKey = getParentKeyColumnName(type, field);

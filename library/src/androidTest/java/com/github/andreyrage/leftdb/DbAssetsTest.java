@@ -806,4 +806,17 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals("base", dbList.get(0).getBaseField());
 		assertEquals("value", dbList.get(0).getField());
 	}
+
+	public void testDeleteExtend() throws Exception {
+		ExtendEntity object = new ExtendEntity(100, "base", "value");
+
+		dbUtils.add(object);
+
+		List<ExtendEntity> dbList = dbUtils.getAll(ExtendEntity.class);
+		assertEquals(1, dbList.size());
+
+		dbUtils.delete(object);
+		dbList = dbUtils.getAll(ExtendEntity.class);
+		assertEquals(0, dbList.size());
+	}
 }
