@@ -9,7 +9,7 @@ repositories {
 }
     
 dependencies {
-  compile 'com.github.andreyrage:leftdb:1.5-beta2'
+  compile 'com.github.andreyrage:leftdb:1.5'
 }
 ```
 
