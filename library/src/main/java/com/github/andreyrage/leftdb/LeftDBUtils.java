@@ -207,9 +207,20 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             return false;
         }
         Field idField = null;
+
+        List<Field> fields = getAllFields(o.getClass());
+        for (Field field : fields) {
+            if (field.getName().equals(idFieldName)) {
+                idField = field;
+                break;
+            }
+        }
+        if (idField == null) {
+            return false;
+        }
+
         Long id = null;
         try {
-            idField = o.getClass().getDeclaredField(idFieldName);
             idField.setAccessible(true);
             id = (Long) idField.get(o);
         } catch (Exception e) {
@@ -535,7 +546,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         final ContentValues values = new ContentValues();
         boolean isColumnChild = false;
         Field fieldAutoInc = null;
-        for (Field value : element.getClass().getDeclaredFields()) {
+        List<Field> fields = getAllFields(element.getClass());
+        for (Field value : fields) {
             if (!value.isAnnotationPresent(ColumnIgnore.class)
                     && !Modifier.isStatic(value.getModifiers())) {
                 if (value.isAnnotationPresent(ColumnAutoInc.class)) {
@@ -572,7 +584,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     private <T> void addColumnChild(@NonNull final T element) {
-        for (Field value : element.getClass().getDeclaredFields()) {
+        List<Field> fields = getAllFields(element.getClass());
+        for (Field value : fields) {
             if (value.isAnnotationPresent(ColumnChild.class)) {
                 value.setAccessible(true);
                 try {
@@ -746,7 +759,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         T result = null;
         try {
             result = type.newInstance();
-            for (Field field : result.getClass().getDeclaredFields()) {
+            List<Field> fields = getAllFields(result.getClass());
+            for (Field field : fields) {
                 if (!field.isAnnotationPresent(ColumnIgnore.class)) {
                     if (!Modifier.isStatic(field.getModifiers())) {
                         fieldMapper(result, cursor, field, getColumnName(field), type);
@@ -879,6 +893,20 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         return type;
     }
 
+    private List<Field> getAllFields(Class<?> clazz) {
+        List<Field> fields = new ArrayList<>();
+        Class<?> current = clazz;
+        while (!current.isAssignableFrom(Object.class)) {
+            for (Field field : current.getDeclaredFields()) {
+                if (!field.getName().contains("$")) {
+                    fields.add(field);
+                }
+            }
+            current = current.getSuperclass();
+        }
+        return fields;
+    }
+
     @NonNull
     private <T> String getTableName(@NonNull Class<T> type) {
         String tableName = type.getSimpleName();
@@ -951,7 +979,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         String id = null;
         String possibleId = null;
         String possibleRealId = null;
-        for (Field field : type.getDeclaredFields()) {
+        List<Field> fields = getAllFields(type);
+        for (Field field : fields) {
             if (field.getType().isAssignableFrom(long.class) || field.getType().isAssignableFrom(Long.class)) {
                 if (field.isAnnotationPresent(ColumnPrimaryKey.class) || field.isAnnotationPresent(ColumnAutoInc.class)) {
                     id = field.getName();
@@ -1037,7 +1066,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
         sqlBuilder.append(getTableName(type));
         sqlBuilder.append(" (");
         int columnCount = 0;
-        for (Field field : type.getDeclaredFields()) {
+        List<Field> fields = getAllFields(type);
+        for (Field field : fields) {
             if (!field.isAnnotationPresent(ColumnIgnore.class)
                     && !field.isAnnotationPresent(ColumnChild.class)) {
                 String columnName = getColumnName(field);
@@ -1187,7 +1217,8 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * */
     protected void createRelationship(@NonNull SQLiteDatabase db, @NonNull Class<?> type) {
         String parentTableName = getTableName(type);
-        for (Field field : type.getDeclaredFields()) {
+        List<Field> fields = getAllFields(type);
+        for (Field field : fields) {
             if (field.isAnnotationPresent(ColumnChild.class)) {
                 String foreignKey = getForeignKeyColumnName(field);
                 String parentKey = getParentKeyColumnName(type, field);

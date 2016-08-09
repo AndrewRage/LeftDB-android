@@ -9,6 +9,7 @@ import com.github.andreyrage.leftdb.entities.ChildMany;
 import com.github.andreyrage.leftdb.entities.ChildManyCustomName;
 import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.ChildOneCustomName;
+import com.github.andreyrage.leftdb.entities.ExtendEntity;
 import com.github.andreyrage.leftdb.entities.FloatKey;
 import com.github.andreyrage.leftdb.entities.FloatKeyChild;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
@@ -791,5 +792,31 @@ public class DbAssetsTest extends AndroidTestCase {
 		assertEquals(1, dbList.size());
 		assertNotSame(object, dbList.get(0));
 		assertEquals("New name", dbList.get(0).getName());
+	}
+
+	public void testExtend() throws Exception {
+		ExtendEntity object = new ExtendEntity(100, "base", "value");
+
+		dbUtils.add(object);
+
+		List<ExtendEntity> dbList = dbUtils.getAll(ExtendEntity.class);
+		assertEquals(1, dbList.size());
+		assertNotSame(object, dbList.get(0));
+		assertEquals(100, dbList.get(0).getId());
+		assertEquals("base", dbList.get(0).getBaseField());
+		assertEquals("value", dbList.get(0).getField());
+	}
+
+	public void testDeleteExtend() throws Exception {
+		ExtendEntity object = new ExtendEntity(100, "base", "value");
+
+		dbUtils.add(object);
+
+		List<ExtendEntity> dbList = dbUtils.getAll(ExtendEntity.class);
+		assertEquals(1, dbList.size());
+
+		dbUtils.delete(object);
+		dbList = dbUtils.getAll(ExtendEntity.class);
+		assertEquals(0, dbList.size());
 	}
 }

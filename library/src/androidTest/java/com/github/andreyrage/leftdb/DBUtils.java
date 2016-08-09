@@ -7,6 +7,7 @@ import com.github.andreyrage.leftdb.entities.AllFields;
 import com.github.andreyrage.leftdb.entities.AnnotationId;
 import com.github.andreyrage.leftdb.entities.ChildManyCustomName;
 import com.github.andreyrage.leftdb.entities.ChildOne;
+import com.github.andreyrage.leftdb.entities.ExtendEntity;
 import com.github.andreyrage.leftdb.entities.FloatKey;
 import com.github.andreyrage.leftdb.entities.FloatKeyChild;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
@@ -35,6 +36,7 @@ public class DBUtils extends LeftDBUtils {
 		super.onCreate(db);
 		createTable(db, AllFields.class);
 		createTable(db, SerializableObject.class);
+		createTable(db, ExtendEntity.class);
 		createTables(db, Arrays.asList(
 				ChildManyCustomName.class,
 				ChildOne.class,
