@@ -57,6 +57,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     protected LeftDBHandler dbHandler;
     protected SQLiteDatabase db;
+    protected boolean isTransaction;
 
     /**
      * Initialize DBHandler
@@ -478,6 +479,42 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Begins a transaction
+     *
+     * Here is the standard idiom for transactions:
+     *
+     * <pre>
+     *   db.beginTransaction();
+     *   try {
+     *     ...
+     *     db.setTransactionSuccessful();
+     *   } finally {
+     *     db.endTransaction();
+     *   }
+     * </pre>
+     * */
+    public void beginTransaction() {
+        isTransaction = true;
+        db.beginTransaction();
+    }
+
+    /**
+     * Marks the current transaction as successful
+     * */
+    public void setTransactionSuccessful() {
+        db.setTransactionSuccessful();
+    }
+
+    /**
+     * End a transaction. See beginTransaction for notes about how to use this and when transactions
+     * are committed and rolled back.
+     */
+    public void endTransaction() {
+        db.endTransaction();
+        isTransaction = false;
+    }
+
+    /**
      * To add collection with optional transaction
      *
      * @param elements the list of object that need to be added to the database
@@ -487,7 +524,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * */
     public <T> int add(@NonNull List<T> elements, boolean useTransaction) {
         int count = 0;
-        if (useTransaction) {
+        if (useTransaction && !isTransaction) {
             try {
                 db.beginTransaction();
                 for (T value : elements) {

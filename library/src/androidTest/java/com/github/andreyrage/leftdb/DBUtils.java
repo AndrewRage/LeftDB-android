@@ -5,6 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 
 import com.github.andreyrage.leftdb.entities.AllFields;
 import com.github.andreyrage.leftdb.entities.AnnotationId;
+import com.github.andreyrage.leftdb.entities.AutoIncId;
 import com.github.andreyrage.leftdb.entities.ChildManyCustomName;
 import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.ExtendEntity;
@@ -38,6 +39,7 @@ public class DBUtils extends LeftDBUtils {
 		createTable(db, SerializableObject.class);
 		createTable(db, ExtendEntity.class);
 		createTables(db, Arrays.asList(
+				AutoIncId.class,
 				ChildManyCustomName.class,
 				ChildOne.class,
 				ParentManyArrayCustomName.class,
