@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.CursorWindow;
+import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
@@ -41,6 +42,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import static com.github.andreyrage.leftdb.utils.CheckNullUtils.nullableArrayOfStrings;
 import static com.github.andreyrage.leftdb.utils.CheckNullUtils.nullableString;
@@ -603,8 +605,28 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                 }
             }
         }
-        long row = db.insertWithOnConflict(getTableName(element.getClass()),
-                null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        long row = -1;
+        boolean isUpdate = false;
+        if (fieldAutoInc != null) {
+            try {
+                row = db.insertWithOnConflict(getTableName(element.getClass()),
+                        null, values, SQLiteDatabase.CONFLICT_FAIL);
+            } catch (SQLiteConstraintException insertException) {
+                try {
+                    String columnName = getColumnName(fieldAutoInc);
+                    fieldAutoInc.setAccessible(true);
+                    Long value = (Long) fieldAutoInc.get(element);
+                    db.update(getTableName(element.getClass()),
+                            values, columnName + "=?", new String[]{String.valueOf(value)});
+                    isUpdate = true;
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            row = db.insertWithOnConflict(getTableName(element.getClass()),
+                    null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        }
         values.clear();
         if (row > 0 && fieldAutoInc != null) {
             try {
@@ -615,12 +637,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             }
         }
         if (isColumnChild) {
-            addColumnChild(element);
+            addColumnChild(element, isUpdate);
         }
         return row;
     }
 
-    private <T> void addColumnChild(@NonNull final T element) {
+    private <T> void addColumnChild(@NonNull final T element, boolean update) {
         List<Field> fields = getAllFields(element.getClass());
         for (Field value : fields) {
             if (value.isAnnotationPresent(ColumnChild.class)) {
@@ -632,14 +654,55 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                     String foreignKey = getForeignKey(value);
                     if (List.class.isAssignableFrom(value.getType())) {
                         List list = (List) value.get(element);
+                        if (update && (list == null || list.size() == 0)) {
+                            delete(DeleteQuery.builder()
+                                    .entity((Class<?>) ((ParameterizedType) value.getGenericType())
+                                            .getActualTypeArguments()[0])
+                                    .where(foreignKey + " = ?")
+                                    .whereArgs(parentKeyValue)
+                                    .build());
+                        }
+                        if (list == null || list.size() == 0) {
+                            return;
+                        }
                         for (Object o : list) {
                             Field foreignKeyField = o.getClass().getDeclaredField(foreignKey);
                             foreignKeyField.setAccessible(true);
                             foreignKeyField.set(o, parentKeyValue);
                         }
                         add(list, false);
+                        if (update) {
+                            Class<?> type = (Class<?>) ((ParameterizedType) value.getGenericType())
+                                    .getActualTypeArguments()[0];
+                            Field key = type.getDeclaredField(getParentKey(value));
+                            key.setAccessible(true);
+                            String idFieldName = getIdFieldName(type);
+                            StringBuffer keys = new StringBuffer();
+                            for (Object o : list) {
+                                Object keyValue = key.get(o);
+                                if (keys.length() > 0) {
+                                    keys.append(", ");
+                                }
+                                keys.append(keyValue);
+                            }
+                            delete(DeleteQuery.builder()
+                                    .entity(type)
+                                    .where(String.format(Locale.getDefault(),
+                                            "%s NOT IN (%s)", idFieldName, keys))
+                                    .build());
+                        }
                     } else {
                         Object childObject = value.get(element);
+                        if (update && childObject == null) {
+                            delete(DeleteQuery.builder()
+                                    .entity(value.getType())
+                                    .where(foreignKey + " = ?")
+                                    .whereArgs(parentKeyValue)
+                                    .build());
+                        }
+                        if (childObject == null) {
+                            return;
+                        }
                         Field foreignKeyField = childObject.getClass().getDeclaredField(foreignKey);
                         foreignKeyField.setAccessible(true);
                         foreignKeyField.set(childObject, parentKeyValue);

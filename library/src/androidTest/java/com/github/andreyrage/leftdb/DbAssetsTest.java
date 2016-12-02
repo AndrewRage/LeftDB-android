@@ -19,8 +19,10 @@ import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentManyArray;
 import com.github.andreyrage.leftdb.entities.ParentManyArrayCustomName;
 import com.github.andreyrage.leftdb.entities.ParentManyCustomName;
+import com.github.andreyrage.leftdb.entities.ParentManyWithoutChild;
 import com.github.andreyrage.leftdb.entities.ParentOne;
 import com.github.andreyrage.leftdb.entities.ParentOneCustomName;
+import com.github.andreyrage.leftdb.entities.ParentOneWithoutChild;
 import com.github.andreyrage.leftdb.entities.PrimaryKeyId;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
 import com.github.andreyrage.leftdb.entities.StringKey;
@@ -442,6 +444,42 @@ public class DbAssetsTest extends AndroidTestCase {
 
 		assertEquals(1, dbUtils.getAll(ParentOne.class).size());
 		assertEquals(1, dbUtils.getAll(ChildOne.class).size());
+
+		parentOne2.setName("update");
+		parentOne2.setChild(null);
+		dbUtils.add(parentOne2);
+
+		dbList = dbUtils.getAll(ParentOne.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals("update", dbList.get(0).getName());
+		assertNull(dbList.get(0).getChild());
+	}
+
+	public void testOneWithoutChildToOne() throws Exception {
+		ParentOneWithoutChild parent = new ParentOneWithoutChild("parent");
+		dbUtils.add(parent);
+		ChildOne child = new ChildOne("child");
+		child.setParentId(parent.getId());
+		dbUtils.add(child);
+
+		List<ParentOneWithoutChild> dbParentList = dbUtils.getAll(ParentOneWithoutChild.class);
+		assertEquals(1, dbParentList.size());
+		assertEquals("parent", dbParentList.get(0).getName());
+		List<ChildOne> dbChildList = dbUtils.getAll(ChildOne.class);
+		assertEquals("child", dbChildList.get(0).getName());
+
+		parent.setName("update");
+		dbUtils.add(parent);
+
+		dbParentList = dbUtils.getAll(ParentOneWithoutChild.class);
+		assertEquals(1, dbParentList.size());
+		assertEquals("update", dbParentList.get(0).getName());
+		dbChildList = dbUtils.getAll(ChildOne.class);
+		assertEquals("child", dbChildList.get(0).getName());
+
+		assertEquals(1, dbUtils.getAll(ParentOneWithoutChild.class).size());
+		assertEquals(1, dbUtils.getAll(ChildOne.class).size());
 	}
 
 	public void testOneToOneCustomName() throws Exception {
@@ -508,6 +546,64 @@ public class DbAssetsTest extends AndroidTestCase {
 		dbUtils.delete(parentMany1);
 
 		assertEquals(1, dbUtils.getAll(ParentMany.class).size());
+		assertEquals(3, dbUtils.getAll(ChildMany.class).size());
+
+		parentMany2.setName("update1");
+		parentMany2.getChilds().remove(0);
+		parentMany2.getChilds().remove(0);
+
+		dbUtils.add(parentMany2);
+		dbList = dbUtils.getAll(ParentMany.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals("update1", dbList.get(0).getName());
+		assertEquals(1, dbList.get(0).getChilds().size());
+		assertEquals("child5", dbList.get(0).getChilds().get(0).getName());
+
+		parentMany2.setName("update2");
+		parentMany2.setChilds(null);
+
+		dbUtils.add(parentMany2);
+		dbList = dbUtils.getAll(ParentMany.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals("update2", dbList.get(0).getName());
+		assertEquals(0, dbList.get(0).getChilds().size());
+	}
+
+	public void testOneWithoutChildToMany() throws Exception {
+		ParentManyWithoutChild parent = new ParentManyWithoutChild("parent");
+		dbUtils.add(parent);
+		ChildMany child1 = new ChildMany("child1");
+		child1.setParentId(parent.getId());
+		dbUtils.add(child1);
+		ChildMany child2 = new ChildMany("child2");
+		child2.setParentId(parent.getId());
+		dbUtils.add(child2);
+		ChildMany child3 = new ChildMany("child3");
+		child3.setParentId(parent.getId());
+		dbUtils.add(child3);
+
+		List<ParentManyWithoutChild> dbParentList = dbUtils.getAll(ParentManyWithoutChild.class);
+		assertEquals(1, dbParentList.size());
+		assertEquals("parent", dbParentList.get(0).getName());
+		List<ChildMany> dbChildList = dbUtils.getAll(ChildMany.class);
+		assertEquals("child1", dbChildList.get(0).getName());
+		assertEquals("child2", dbChildList.get(1).getName());
+		assertEquals("child3", dbChildList.get(2).getName());
+
+		parent.setName("update");
+		dbUtils.add(parent);
+
+		dbParentList = dbUtils.getAll(ParentManyWithoutChild.class);
+		assertEquals(1, dbParentList.size());
+		assertEquals("update", dbParentList.get(0).getName());
+		dbChildList = dbUtils.getAll(ChildMany.class);
+		assertEquals("child1", dbChildList.get(0).getName());
+		assertEquals("child2", dbChildList.get(1).getName());
+		assertEquals("child3", dbChildList.get(2).getName());
+
+		assertEquals(1, dbUtils.getAll(ParentManyWithoutChild.class).size());
 		assertEquals(3, dbUtils.getAll(ChildMany.class).size());
 	}
 
