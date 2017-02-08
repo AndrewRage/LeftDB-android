@@ -517,6 +517,42 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Execute db operations with transaction on callback
+     * */
+    //TODO need test
+    public void executeTransaction(@NonNull Execute execute) {
+        executeTransaction(execute, null);
+    }
+
+    /**
+     * Execute db operations with transaction on callback
+     * */
+    //TODO need test
+    public void executeTransaction(@NonNull Execute execute,
+                                   @Nullable OnException exceptionCallback) {
+        beginTransaction();
+        try {
+            execute.execute();
+            setTransactionSuccessful();
+        } catch (Exception e) {
+            Log.e(TAG, "executeTransaction", e);
+            if (exceptionCallback != null) {
+                exceptionCallback.onException(e);
+            }
+        } finally {
+            endTransaction();
+        }
+    }
+
+    public interface Execute {
+        void execute();
+    }
+
+    public interface OnException {
+        void onException(Exception e);
+    }
+
+    /**
      * To add collection with optional transaction
      *
      * @param elements the list of object that need to be added to the database
