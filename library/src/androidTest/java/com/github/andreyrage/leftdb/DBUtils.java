@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017 Andrii Horishnii
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.github.andreyrage.leftdb;
 
 import android.content.Context;
@@ -5,6 +21,7 @@ import android.database.sqlite.SQLiteDatabase;
 
 import com.github.andreyrage.leftdb.entities.AllFields;
 import com.github.andreyrage.leftdb.entities.AnnotationId;
+import com.github.andreyrage.leftdb.entities.AutoIncId;
 import com.github.andreyrage.leftdb.entities.ChildManyCustomName;
 import com.github.andreyrage.leftdb.entities.ChildOne;
 import com.github.andreyrage.leftdb.entities.ExtendEntity;
@@ -38,6 +55,7 @@ public class DBUtils extends LeftDBUtils {
 		createTable(db, SerializableObject.class);
 		createTable(db, ExtendEntity.class);
 		createTables(db, Arrays.asList(
+				AutoIncId.class,
 				ChildManyCustomName.class,
 				ChildOne.class,
 				ParentManyArrayCustomName.class,

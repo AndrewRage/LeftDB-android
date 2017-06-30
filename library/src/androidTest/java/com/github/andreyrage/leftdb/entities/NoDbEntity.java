@@ -19,17 +19,21 @@ package com.github.andreyrage.leftdb.entities;
 import com.github.andreyrage.leftdb.annotation.ColumnAutoInc;
 
 /**
- * Created by rage on 11/18/15.
+ * Created by rage on 28.11.15.
  */
-public class ChildOne {
-    @ColumnAutoInc private long id;
-    private long parentId;
+public class NoDbEntity {
+    @ColumnAutoInc private Long key;
     private String name;
 
-    public ChildOne() {
+    public NoDbEntity() {
     }
 
-    public ChildOne(String name) {
+    public NoDbEntity(String name) {
+        this.name = name;
+    }
+
+    public NoDbEntity(Long primKey, String name) {
+        this.key = primKey;
         this.name = name;
     }
 
@@ -38,42 +42,34 @@ public class ChildOne {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ChildOne childOne = (ChildOne) o;
+        NoDbEntity that = (NoDbEntity) o;
 
-        if (id != childOne.id) return false;
-        return !(name != null ? !name.equals(childOne.name) : childOne.name != null);
+        if (key != null ? !key.equals(that.key) : that.key != null) return false;
+        return !(name != null ? !name.equals(that.name) : that.name != null);
 
     }
 
     @Override
     public int hashCode() {
-        int result = (int) (id ^ (id >>> 32));
+        int result = key != null ? key.hashCode() : 0;
         result = 31 * result + (name != null ? name.hashCode() : 0);
         return result;
     }
 
-    @Override public String toString() {
-        return "Child{" +
-                "id=" + id +
-                ", parentId=" + parentId +
+    @Override
+    public String toString() {
+        return "AutoIncId{" +
+                "key=" + key +
                 ", name='" + name + '\'' +
                 '}';
     }
 
-    public long getId() {
-        return id;
+    public Long getKey() {
+        return key;
     }
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public long getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(long parentId) {
-        this.parentId = parentId;
+    public void setKey(Long key) {
+        this.key = key;
     }
 
     public String getName() {
