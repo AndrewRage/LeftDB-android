@@ -8,6 +8,7 @@ import android.database.CursorWindow;
 import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
+import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -73,9 +74,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * */
     protected void setDBContext(@NonNull Context context, @NonNull String name, int version) {
         dbHandler = new LeftDBHandler(context, name, version, this);
-        if (db == null || !db.isOpen()) {
-            db = dbHandler.getWritableDatabase();
-        }
+        db = dbHandler.getWritableDatabase();
     }
 
     /**
@@ -89,8 +88,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @param db The database.
      */
     @Override
+    @CallSuper
     public void onCreate(SQLiteDatabase db) {
-
+        this.db = db;
     }
 
     /**
@@ -107,8 +107,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @param newVersion The new database version.
      */
     @Override
+    @CallSuper
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+        this.db = db;
     }
 
     /**
@@ -126,8 +127,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @param newVersion The new database version.
      */
     @Override
+    @CallSuper
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+        this.db = db;
     }
 
     /**
