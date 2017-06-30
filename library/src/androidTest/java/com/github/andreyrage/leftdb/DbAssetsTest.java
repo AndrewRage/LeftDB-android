@@ -5,6 +5,7 @@ import android.test.AndroidTestCase;
 
 import com.github.andreyrage.leftdb.entities.AllFields;
 import com.github.andreyrage.leftdb.entities.AnnotationId;
+import com.github.andreyrage.leftdb.entities.AutoIncId;
 import com.github.andreyrage.leftdb.entities.ChildMany;
 import com.github.andreyrage.leftdb.entities.ChildManyCustomName;
 import com.github.andreyrage.leftdb.entities.ChildOne;
@@ -12,17 +13,20 @@ import com.github.andreyrage.leftdb.entities.ChildOneCustomName;
 import com.github.andreyrage.leftdb.entities.ExtendEntity;
 import com.github.andreyrage.leftdb.entities.FloatKey;
 import com.github.andreyrage.leftdb.entities.FloatKeyChild;
+import com.github.andreyrage.leftdb.entities.NoDbEntity;
 import com.github.andreyrage.leftdb.entities.NotAnnotationId;
+import com.github.andreyrage.leftdb.entities.ParentMany;
 import com.github.andreyrage.leftdb.entities.ParentManyArray;
 import com.github.andreyrage.leftdb.entities.ParentManyArrayCustomName;
 import com.github.andreyrage.leftdb.entities.ParentManyCustomName;
-import com.github.andreyrage.leftdb.entities.ParentOneCustomName;
-import com.github.andreyrage.leftdb.entities.StringKeyChild;
-import com.github.andreyrage.leftdb.entities.StringKey;
-import com.github.andreyrage.leftdb.entities.ParentMany;
+import com.github.andreyrage.leftdb.entities.ParentManyWithoutChild;
 import com.github.andreyrage.leftdb.entities.ParentOne;
+import com.github.andreyrage.leftdb.entities.ParentOneCustomName;
+import com.github.andreyrage.leftdb.entities.ParentOneWithoutChild;
 import com.github.andreyrage.leftdb.entities.PrimaryKeyId;
 import com.github.andreyrage.leftdb.entities.SerializableObject;
+import com.github.andreyrage.leftdb.entities.StringKey;
+import com.github.andreyrage.leftdb.entities.StringKeyChild;
 import com.github.andreyrage.leftdb.entities.WrongIncObject;
 import com.github.andreyrage.leftdb.exceptions.IncorrectAutoIncTypeException;
 import com.github.andreyrage.leftdb.queries.CountQuery;
@@ -440,6 +444,42 @@ public class DbAssetsTest extends AndroidTestCase {
 
 		assertEquals(1, dbUtils.getAll(ParentOne.class).size());
 		assertEquals(1, dbUtils.getAll(ChildOne.class).size());
+
+		parentOne2.setName("update");
+		parentOne2.setChild(null);
+		dbUtils.add(parentOne2);
+
+		dbList = dbUtils.getAll(ParentOne.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals("update", dbList.get(0).getName());
+		assertNull(dbList.get(0).getChild());
+	}
+
+	public void testOneWithoutChildToOne() throws Exception {
+		ParentOneWithoutChild parent = new ParentOneWithoutChild("parent");
+		dbUtils.add(parent);
+		ChildOne child = new ChildOne("child");
+		child.setParentId(parent.getId());
+		dbUtils.add(child);
+
+		List<ParentOneWithoutChild> dbParentList = dbUtils.getAll(ParentOneWithoutChild.class);
+		assertEquals(1, dbParentList.size());
+		assertEquals("parent", dbParentList.get(0).getName());
+		List<ChildOne> dbChildList = dbUtils.getAll(ChildOne.class);
+		assertEquals("child", dbChildList.get(0).getName());
+
+		parent.setName("update");
+		dbUtils.add(parent);
+
+		dbParentList = dbUtils.getAll(ParentOneWithoutChild.class);
+		assertEquals(1, dbParentList.size());
+		assertEquals("update", dbParentList.get(0).getName());
+		dbChildList = dbUtils.getAll(ChildOne.class);
+		assertEquals("child", dbChildList.get(0).getName());
+
+		assertEquals(1, dbUtils.getAll(ParentOneWithoutChild.class).size());
+		assertEquals(1, dbUtils.getAll(ChildOne.class).size());
 	}
 
 	public void testOneToOneCustomName() throws Exception {
@@ -506,6 +546,64 @@ public class DbAssetsTest extends AndroidTestCase {
 		dbUtils.delete(parentMany1);
 
 		assertEquals(1, dbUtils.getAll(ParentMany.class).size());
+		assertEquals(3, dbUtils.getAll(ChildMany.class).size());
+
+		parentMany2.setName("update1");
+		parentMany2.getChilds().remove(0);
+		parentMany2.getChilds().remove(0);
+
+		dbUtils.add(parentMany2);
+		dbList = dbUtils.getAll(ParentMany.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals("update1", dbList.get(0).getName());
+		assertEquals(1, dbList.get(0).getChilds().size());
+		assertEquals("child5", dbList.get(0).getChilds().get(0).getName());
+
+		parentMany2.setName("update2");
+		parentMany2.setChilds(null);
+
+		dbUtils.add(parentMany2);
+		dbList = dbUtils.getAll(ParentMany.class);
+
+		assertEquals(1, dbList.size());
+		assertEquals("update2", dbList.get(0).getName());
+		assertEquals(0, dbList.get(0).getChilds().size());
+	}
+
+	public void testOneWithoutChildToMany() throws Exception {
+		ParentManyWithoutChild parent = new ParentManyWithoutChild("parent");
+		dbUtils.add(parent);
+		ChildMany child1 = new ChildMany("child1");
+		child1.setParentId(parent.getId());
+		dbUtils.add(child1);
+		ChildMany child2 = new ChildMany("child2");
+		child2.setParentId(parent.getId());
+		dbUtils.add(child2);
+		ChildMany child3 = new ChildMany("child3");
+		child3.setParentId(parent.getId());
+		dbUtils.add(child3);
+
+		List<ParentManyWithoutChild> dbParentList = dbUtils.getAll(ParentManyWithoutChild.class);
+		assertEquals(1, dbParentList.size());
+		assertEquals("parent", dbParentList.get(0).getName());
+		List<ChildMany> dbChildList = dbUtils.getAll(ChildMany.class);
+		assertEquals("child1", dbChildList.get(0).getName());
+		assertEquals("child2", dbChildList.get(1).getName());
+		assertEquals("child3", dbChildList.get(2).getName());
+
+		parent.setName("update");
+		dbUtils.add(parent);
+
+		dbParentList = dbUtils.getAll(ParentManyWithoutChild.class);
+		assertEquals(1, dbParentList.size());
+		assertEquals("update", dbParentList.get(0).getName());
+		dbChildList = dbUtils.getAll(ChildMany.class);
+		assertEquals("child1", dbChildList.get(0).getName());
+		assertEquals("child2", dbChildList.get(1).getName());
+		assertEquals("child3", dbChildList.get(2).getName());
+
+		assertEquals(1, dbUtils.getAll(ParentManyWithoutChild.class).size());
 		assertEquals(3, dbUtils.getAll(ChildMany.class).size());
 	}
 
@@ -817,6 +915,133 @@ public class DbAssetsTest extends AndroidTestCase {
 
 		dbUtils.delete(object);
 		dbList = dbUtils.getAll(ExtendEntity.class);
+		assertEquals(0, dbList.size());
+	}
+
+	public void testTransactions() throws Exception {
+		List<AutoIncId> objList = new ArrayList<>();
+		for (int i = 0; i < 100; i++) {
+			AutoIncId object = new AutoIncId(String.valueOf(i));
+			objList.add(object);
+		}
+
+		dbUtils.beginTransaction();
+		for (AutoIncId object : objList) {
+			dbUtils.add(object);
+		}
+		dbUtils.setTransactionSuccessful();
+		dbUtils.endTransaction();
+
+		List<AutoIncId> dbList = dbUtils.getAll(AutoIncId.class);
+		assertEquals(100, dbList.size());
+
+		dbUtils.beginTransaction();
+		for (AutoIncId object : objList) {
+			dbUtils.delete(object);
+		}
+		dbUtils.setTransactionSuccessful();
+		dbUtils.endTransaction();
+		dbList = dbUtils.getAll(AutoIncId.class);
+		assertEquals(0, dbList.size());
+	}
+
+	public void testListTransactions() throws Exception {
+		List<AutoIncId> objList1 = new ArrayList<>();
+		for (int i = 0; i < 50; i++) {
+			AutoIncId object = new AutoIncId(String.valueOf(i));
+			objList1.add(object);
+		}
+		List<AutoIncId> objList2 = new ArrayList<>();
+		for (int i = 0; i < 50; i++) {
+			AutoIncId object = new AutoIncId(String.valueOf(i));
+			objList2.add(object);
+		}
+
+		dbUtils.beginTransaction();
+		dbUtils.add(objList1);
+		dbUtils.add(objList2);
+		dbUtils.setTransactionSuccessful();
+		dbUtils.endTransaction();
+
+		List<AutoIncId> dbList = dbUtils.getAll(AutoIncId.class);
+		assertEquals(100, dbList.size());
+
+		dbUtils.beginTransaction();
+		for (AutoIncId object : objList1) {
+			dbUtils.delete(object);
+		}
+		dbUtils.setTransactionSuccessful();
+		dbUtils.endTransaction();
+		dbList = dbUtils.getAll(AutoIncId.class);
+		assertEquals(50, dbList.size());
+	}
+
+	public void testTransactionsTime() throws Exception {
+		//OBJ
+		long transaction = System.currentTimeMillis();
+		dbUtils.beginTransaction();
+		for (int i = 0; i < 100; i++) {
+			dbUtils.add(new AutoIncId());
+		}
+		dbUtils.setTransactionSuccessful();
+		dbUtils.endTransaction();
+		transaction = System.currentTimeMillis() - transaction;
+
+		long noTransaction = System.currentTimeMillis();
+		for (int i = 0; i < 100; i++) {
+			dbUtils.add(new AutoIncId());
+		}
+		noTransaction = System.currentTimeMillis() - noTransaction;
+
+		assertTrue(noTransaction > transaction);
+
+		//LIST
+		List<AutoIncId> objList = new ArrayList<>();
+		for (int i = 0; i < 100; i++) {
+			AutoIncId object = new AutoIncId(String.valueOf(i));
+			objList.add(object);
+		}
+
+		transaction = System.currentTimeMillis();
+		dbUtils.add(objList);
+		transaction = System.currentTimeMillis() - transaction;
+
+		objList = new ArrayList<>();
+		for (int i = 0; i < 100; i++) {
+			AutoIncId object = new AutoIncId(String.valueOf(i));
+			objList.add(object);
+		}
+
+		noTransaction = System.currentTimeMillis();
+		dbUtils.add(objList, false);
+		noTransaction = System.currentTimeMillis() - noTransaction;
+
+		assertTrue(noTransaction > transaction);
+	}
+
+	public void testFailTransactions() throws Exception {
+		List<AutoIncId> objList = new ArrayList<>();
+		for (int i = 0; i < 100; i++) {
+			AutoIncId object = new AutoIncId(String.valueOf(i));
+			objList.add(object);
+		}
+
+		dbUtils.beginTransaction();
+		try {
+			for (AutoIncId object : objList) {
+				dbUtils.add(object);
+				if (object.getKey() == 50) {
+					dbUtils.add(new NoDbEntity());
+				}
+			}
+			dbUtils.setTransactionSuccessful();
+		} catch (Exception e) {
+
+		} finally {
+			dbUtils.endTransaction();
+		}
+
+		List<AutoIncId> dbList = dbUtils.getAll(AutoIncId.class);
 		assertEquals(0, dbList.size());
 	}
 }
