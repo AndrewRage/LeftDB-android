@@ -1,7 +1,6 @@
 package com.github.andreyrage.leftdb.entities;
 
 /**
- * eKreative
  * Created by rage on 11/30/15.
  */
 public class FloatKeyChild {

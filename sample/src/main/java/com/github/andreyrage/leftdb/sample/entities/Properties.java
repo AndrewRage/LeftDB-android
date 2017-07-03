@@ -3,7 +3,6 @@ package com.github.andreyrage.leftdb.sample.entities;
 import java.util.Date;
 
 /**
- * eKreative
  * Created by rage on 11/27/15.
  */
 public class Properties {

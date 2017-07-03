@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * eKreative
  * Created by rage on 11/27/15.
  */
 public class EntityAdapter extends RecyclerView.Adapter<EntityAdapter.ViewHolder> {

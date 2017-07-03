@@ -8,7 +8,6 @@ import com.github.andreyrage.leftdb.annotation.TableName;
 import java.util.Date;
 
 /**
- * eKreative
  * Created by rage on 11/27/15.
  */
 
