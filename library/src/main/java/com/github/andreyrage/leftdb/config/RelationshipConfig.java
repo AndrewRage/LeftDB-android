@@ -22,7 +22,6 @@ import android.support.annotation.Nullable;
 import static com.github.andreyrage.leftdb.utils.CheckNullUtils.checkNotNull;
 
 /**
- * eKreative
  * Created by rage on 12/3/15.
  */
 public class RelationshipConfig {

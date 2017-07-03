@@ -20,7 +20,6 @@ import com.github.andreyrage.leftdb.annotation.ColumnChild;
 import com.github.andreyrage.leftdb.annotation.ColumnPrimaryKey;
 
 /**
- * eKreative
  * Created by rage on 11/30/15.
  */
 public class FloatKey {

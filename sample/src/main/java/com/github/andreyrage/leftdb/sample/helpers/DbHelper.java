@@ -26,7 +26,6 @@ import com.google.gson.Gson;
 import java.lang.reflect.Type;
 
 /**
- * eKreative
  * Created by rage on 11/26/15.
  */
 public class DbHelper extends LeftDBUtils {
