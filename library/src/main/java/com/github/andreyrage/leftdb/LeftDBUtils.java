@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017 Andrii Horishnii
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.github.andreyrage.leftdb;
 
 import android.content.ContentResolver;
@@ -5,9 +21,11 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.CursorWindow;
+import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
+import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -41,6 +59,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import static com.github.andreyrage.leftdb.utils.CheckNullUtils.nullableArrayOfStrings;
 import static com.github.andreyrage.leftdb.utils.CheckNullUtils.nullableString;
@@ -57,6 +76,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
 
     protected LeftDBHandler dbHandler;
     protected SQLiteDatabase db;
+    protected boolean isTransaction;
 
     /**
      * Initialize DBHandler
@@ -73,9 +93,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * */
     protected void setDBContext(@NonNull Context context, @NonNull String name, int version) {
         dbHandler = new LeftDBHandler(context, name, version, this);
-        if (db == null || !db.isOpen()) {
-            db = dbHandler.getWritableDatabase();
-        }
+        db = dbHandler.getWritableDatabase();
     }
 
     /**
@@ -89,8 +107,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @param db The database.
      */
     @Override
+    @CallSuper
     public void onCreate(SQLiteDatabase db) {
-
+        this.db = db;
     }
 
     /**
@@ -107,8 +126,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @param newVersion The new database version.
      */
     @Override
+    @CallSuper
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+        this.db = db;
     }
 
     /**
@@ -126,8 +146,9 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * @param newVersion The new database version.
      */
     @Override
+    @CallSuper
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+        this.db = db;
     }
 
     /**
@@ -478,6 +499,78 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
     }
 
     /**
+     * Begins a transaction
+     *
+     * Here is the standard idiom for transactions:
+     *
+     * <pre>
+     *   db.beginTransaction();
+     *   try {
+     *     ...
+     *     db.setTransactionSuccessful();
+     *   } finally {
+     *     db.endTransaction();
+     *   }
+     * </pre>
+     * */
+    public void beginTransaction() {
+        isTransaction = true;
+        db.beginTransaction();
+    }
+
+    /**
+     * Marks the current transaction as successful
+     * */
+    public void setTransactionSuccessful() {
+        db.setTransactionSuccessful();
+    }
+
+    /**
+     * End a transaction. See beginTransaction for notes about how to use this and when transactions
+     * are committed and rolled back.
+     */
+    public void endTransaction() {
+        db.endTransaction();
+        isTransaction = false;
+    }
+
+    /**
+     * Execute db operations with transaction on callback
+     * */
+    //TODO need test
+    public void executeTransaction(@NonNull Execute execute) {
+        executeTransaction(execute, null);
+    }
+
+    /**
+     * Execute db operations with transaction on callback
+     * */
+    //TODO need test
+    public void executeTransaction(@NonNull Execute execute,
+                                   @Nullable OnException exceptionCallback) {
+        beginTransaction();
+        try {
+            execute.execute();
+            setTransactionSuccessful();
+        } catch (Exception e) {
+            Log.e(TAG, "executeTransaction", e);
+            if (exceptionCallback != null) {
+                exceptionCallback.onException(e);
+            }
+        } finally {
+            endTransaction();
+        }
+    }
+
+    public interface Execute {
+        void execute();
+    }
+
+    public interface OnException {
+        void onException(Exception e);
+    }
+
+    /**
      * To add collection with optional transaction
      *
      * @param elements the list of object that need to be added to the database
@@ -487,7 +580,7 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
      * */
     public <T> int add(@NonNull List<T> elements, boolean useTransaction) {
         int count = 0;
-        if (useTransaction) {
+        if (useTransaction && !isTransaction) {
             try {
                 db.beginTransaction();
                 for (T value : elements) {
@@ -566,8 +659,28 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                 }
             }
         }
-        long row = db.insertWithOnConflict(getTableName(element.getClass()),
-                null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        long row = -1;
+        boolean isUpdate = false;
+        if (fieldAutoInc != null) {
+            try {
+                row = db.insertWithOnConflict(getTableName(element.getClass()),
+                        null, values, SQLiteDatabase.CONFLICT_FAIL);
+            } catch (SQLiteConstraintException insertException) {
+                try {
+                    String columnName = getColumnName(fieldAutoInc);
+                    fieldAutoInc.setAccessible(true);
+                    Long value = (Long) fieldAutoInc.get(element);
+                    db.update(getTableName(element.getClass()),
+                            values, columnName + "=?", new String[]{String.valueOf(value)});
+                    isUpdate = true;
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            row = db.insertWithOnConflict(getTableName(element.getClass()),
+                    null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        }
         values.clear();
         if (row > 0 && fieldAutoInc != null) {
             try {
@@ -578,12 +691,12 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
             }
         }
         if (isColumnChild) {
-            addColumnChild(element);
+            addColumnChild(element, isUpdate);
         }
         return row;
     }
 
-    private <T> void addColumnChild(@NonNull final T element) {
+    private <T> void addColumnChild(@NonNull final T element, boolean update) {
         List<Field> fields = getAllFields(element.getClass());
         for (Field value : fields) {
             if (value.isAnnotationPresent(ColumnChild.class)) {
@@ -595,14 +708,55 @@ public abstract class LeftDBUtils implements LeftDBHandler.OnDbChangeCallback {
                     String foreignKey = getForeignKey(value);
                     if (List.class.isAssignableFrom(value.getType())) {
                         List list = (List) value.get(element);
+                        if (update && (list == null || list.size() == 0)) {
+                            delete(DeleteQuery.builder()
+                                    .entity((Class<?>) ((ParameterizedType) value.getGenericType())
+                                            .getActualTypeArguments()[0])
+                                    .where(foreignKey + " = ?")
+                                    .whereArgs(parentKeyValue)
+                                    .build());
+                        }
+                        if (list == null || list.size() == 0) {
+                            return;
+                        }
                         for (Object o : list) {
                             Field foreignKeyField = o.getClass().getDeclaredField(foreignKey);
                             foreignKeyField.setAccessible(true);
                             foreignKeyField.set(o, parentKeyValue);
                         }
                         add(list, false);
+                        if (update) {
+                            Class<?> type = (Class<?>) ((ParameterizedType) value.getGenericType())
+                                    .getActualTypeArguments()[0];
+                            Field key = type.getDeclaredField(getParentKey(value));
+                            key.setAccessible(true);
+                            String idFieldName = getIdFieldName(type);
+                            StringBuffer keys = new StringBuffer();
+                            for (Object o : list) {
+                                Object keyValue = key.get(o);
+                                if (keys.length() > 0) {
+                                    keys.append(", ");
+                                }
+                                keys.append(keyValue);
+                            }
+                            delete(DeleteQuery.builder()
+                                    .entity(type)
+                                    .where(String.format(Locale.getDefault(),
+                                            "%s NOT IN (%s)", idFieldName, keys))
+                                    .build());
+                        }
                     } else {
                         Object childObject = value.get(element);
+                        if (update && childObject == null) {
+                            delete(DeleteQuery.builder()
+                                    .entity(value.getType())
+                                    .where(foreignKey + " = ?")
+                                    .whereArgs(parentKeyValue)
+                                    .build());
+                        }
+                        if (childObject == null) {
+                            return;
+                        }
                         Field foreignKeyField = childObject.getClass().getDeclaredField(foreignKey);
                         foreignKeyField.setAccessible(true);
                         foreignKeyField.set(childObject, parentKeyValue);

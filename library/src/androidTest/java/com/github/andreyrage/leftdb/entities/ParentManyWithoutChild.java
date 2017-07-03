@@ -17,30 +17,27 @@
 package com.github.andreyrage.leftdb.entities;
 
 import com.github.andreyrage.leftdb.annotation.ColumnAutoInc;
-import com.github.andreyrage.leftdb.annotation.ColumnChild;
-
-import java.util.List;
+import com.github.andreyrage.leftdb.annotation.TableName;
 
 /**
  * Created by rage on 11/18/15.
  */
-public class ParentMany {
+
+@TableName("ParentMany")
+public class ParentManyWithoutChild {
     @ColumnAutoInc private Long id;
     private String name;
-    @ColumnChild(foreignKey = "parentId", parentKey = "id") private List<ChildMany> childs;
 
-    public ParentMany() {
+    public ParentManyWithoutChild() {
     }
 
-    public ParentMany(String name, List<ChildMany> childs) {
+    public ParentManyWithoutChild(String name) {
         this.name = name;
-        this.childs = childs;
     }
 
-    public ParentMany(Long id, String name, List<ChildMany> childs) {
+    public ParentManyWithoutChild(Long id, String name) {
         this.id = id;
         this.name = name;
-        this.childs = childs;
     }
 
     @Override
@@ -48,7 +45,6 @@ public class ParentMany {
         return "ParentMany{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", childs=" + childs +
                 '}';
     }
 
@@ -57,19 +53,17 @@ public class ParentMany {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ParentMany that = (ParentMany) o;
+        ParentManyWithoutChild that = (ParentManyWithoutChild) o;
 
-        if (id != that.id) return false;
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        return !(childs != null ? !childs.equals(that.childs) : that.childs != null);
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        return name != null ? name.equals(that.name) : that.name == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = (int) (id ^ (id >>> 32));
+        int result = id != null ? id.hashCode() : 0;
         result = 31 * result + (name != null ? name.hashCode() : 0);
-        result = 31 * result + (childs != null ? childs.hashCode() : 0);
         return result;
     }
 
@@ -87,13 +81,5 @@ public class ParentMany {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public List<ChildMany> getChilds() {
-        return childs;
-    }
-
-    public void setChilds(List<ChildMany> childs) {
-        this.childs = childs;
     }
 }
